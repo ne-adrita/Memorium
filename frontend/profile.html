@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Memorium — Profile</title>
+    <meta name="title" content="Memorium — Profile">
+    <meta name="description" content="Your Memorium profile and account settings">
+    <meta name="keywords" content="profile, account, settings">
+    <meta name="author" content="Memorium">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://memorium.app/profile">
+    <meta property="og:title" content="Memorium — Profile">
+    <meta property="og:description" content="Your Memorium profile and account settings">
+    <meta property="og:image" content="https://memorium.app/assets/images/og-image.jpg">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#4A3428">
+    <meta name="msapplication-TileColor" content="#4A3428">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Caveat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animation.css">
+    <link rel="stylesheet" href="css/responsive.css">
+
+    <style>
+        /* Profile Page Specific Styles */
+        body {
+            min-height: 100vh;
+            background: var(--background);
+        }
+
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-5);
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+
+        .profile-avatar {
+            width: 150px;
+            height: 150px;
+            background: var(--paper);
+            border: 4px solid var(--color-primary);
+            border-radius: var(--radius-round);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--space-6);
+            position: relative;
+        }
+
+        .profile-avatar-icon {
+            font-size: 6rem;
+            color: var(--color-primary);
+        }
+
+        .profile-avatar .gold { color: var(--accent-gold); }
+
+        .profile-header h1 {
+            font-family: var(--font-heading);
+            font-size: var(--fs-3xl);
+            font-weight: var(--fw-bold);
+            color: var(--color-primary-dark);
+        }
+
+        .profile-header p {
+            color: var(--color-text-light);
+            font-size: var(--fs-lg);
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--space-5);
+            margin-bottom: var(--space-8);
+        }
+
+        .profile-stat {
+            text-align: center;
+            padding: var(--space-4);
+            background: var(--paper);
+            border-radius: var(--radius-md);
+        }
+
+        .profile-stat-number {
+            font-family: var(--font-heading);
+            font-size: var(--fs-2xl);
+            font-weight: var(--fw-bold);
+            color: var(--color-primary);
+        }
+
+        .profile-stat-label {
+            color: var(--color-text-muted);
+            font-size: var(--fs-sm);
+            margin-top: var(--space-1);
+        }
+
+        .profile-section {
+            background: var(--paper);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin-bottom: var(--space-6);
+        }
+
+        .profile-section h2 {
+            font-family: var(--font-heading);
+            font-size: var(--fs-lg);
+            font-weight: var(--fw-semibold);
+            color: var(--color-primary-dark);
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-3);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .profile-entry {
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-4);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .profile-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .entry-meta {
+            font-size: var(--fs-sm);
+            color: var(--color-text-muted);
+            margin-bottom: var(--space-2);
+        }
+
+        .entry-meta span {
+            margin-right: var(--space-3);
+        }
+
+        .entry-preview {
+            color: var(--color-text-dark);
+            font-family: var(--font-body);
+            line-height: 1.6;
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: var(--button-padding-y) var(--button-padding-x);
+            border-radius: var(--button-radius);
+            font-family: var(--font-heading);
+            font-size: var(--fs-md);
+            font-weight: var(--fw-medium);
+            text-decoration: none;
+            color: var(--color-primary);
+            border: 1px solid var(--color-primary);
+            transition: all var(--transition-normal);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-primary);
+            color: var(--color-paper);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         NAVBAR
+         ============================================================ -->
+    <header class="navbar" id="navbar" role="banner">
+        <nav class="nav-container" aria-label="Main navigation">
+            
+            <!-- Brand Logo -->
+            <a href="index.html" class="nav-brand" aria-label="Memorium Home">
+                <span class="nav-brand-icon">📖</span>
+                Memor<span>ium</span>
+            </a>
+            
+            <!-- Navigation Links -->
+            <ul class="nav-links" role="list">
+                <li><a href="index.html" class="nav-link active">Home</a></li>
+                <li><a href="bookshelf.html" class="nav-link">My Journals</a></li>
+                <li><a href="journal.html" class="nav-link">Journal</a></li>
+                <li><a href="settings.html" class="btn btn-outline btn-sm">Settings</a></li>
+            </ul>
+            
+            <!-- Mobile Toggle -->
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- ============================================================
+         MAIN CONTENT
+         ============================================================ -->
+    <main>
+        <div class="profile-container">
+
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <span class="profile-avatar-icon">📖</span>
+                </div>
+                <h1>Alexandra M.</h1>
+                <p>Memory Keeper since February 2026</p>
+            </div>
+
+            <!-- Profile Stats -->
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="profile-stat-number">12</div>
+                    <div class="profile-stat-label">Entries</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-number">3</div>
+                    <div class="profile-stat-label">Journals</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-number">14</div>
+                    <div class="profile-stat-label">Days</div>
+                </div>
+            </div>
+
+            <!-- Profile Sections -->
+            <div class="profile-section">
+                <h2>Journal Entries</h2>
+                <div class="profile-entry">
+                    <div class="entry-meta">
+                        <span>Friday, Feb 14</span>
+                        <span>7:32 PM</span>
+                    </div>
+                    <p class="entry-preview">
+                        <span class="first-letter">T</span>oday was one of those 
+                        quiet days that make you want to curl up with a warm 
+                        cup of coffee and just write.
+                    </p>
+                </div>
+                <div class="profile-entry">
+                    <div class="entry-meta">
+                        <span>Tuesday, Feb 7</span>
+                        <span>6:15 PM</span>
+                    </div>
+                    <p class="entry-preview">
+                        <span class="first-letter">S</span>ometimes the smallest 
+                        moments make the biggest impact.
+                    </p>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h2>Account Information</h2>
+                <p>Your account is active and your memories are safe.</p>
+                <a href="settings.html" class="btn-secondary">View All Settings</a>
+            </div>
+
+            <div class="profile-section">
+                <h2>Connected Apps</h2>
+                <p>No connected apps yet.</p>
+                <a href="#" class="btn-secondary">Connect Another App</a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 Memorium. Crafted for memory keepers.</p>
+            <p class="footer-quote">"Some memories should grow old with you."</p>
+        </div>
+    </footer>
+
+    <!-- ============================================================
+         SCRIPTS
+         ============================================================ -->
+    <script src="js/app.js"></script>
+    
+    <script>
+        // Inline critical JS for immediate interactivity
+        (function() {
+            // Navbar scroll effect
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+            
+            // Mobile nav toggle
+            const toggle = document.getElementById('navToggle');
+            const navLinks = document.querySelector('.nav-links');
+            let menuOpen = false;
+            
+            toggle.addEventListener('click', function() {
+                menuOpen = !menuOpen;
+                toggle.setAttribute('aria-expanded', menuOpen);
+                // Full mobile menu functionality in app.js
+            });
+            
+            // Active nav link on scroll
+            const sections = document.querySelectorAll('section[id]');
+            const navItems = document.querySelectorAll('.nav-link');
+            
+            window.addEventListener('scroll', function() {
+                let current = '';
+                sections.forEach(function(section) {
+                    const sectionTop = section.offsetTop - 100;
+                    if (window.scrollY >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navItems.forEach(function(link) {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        })();
+    </script>
+
+</body>
+</html>

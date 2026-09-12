@@ -1,0 +1,43 @@
+<!-- Footer Component -->
+<footer class="footer">
+    <div class="footer-content">
+        <p>&copy; 2026 Memorium. Crafted for memory keepers.</p>
+        <p class="footer-quote">"Some memories should grow old with you."</p>
+    </div>
+</footer>
+
+<style>
+    .footer {
+        background: var(--dark-leather);
+        padding: 3rem 2rem 2rem;
+        margin-top: 4rem;
+    }
+
+    .footer-content {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .footer p {
+        color: rgba(248, 241, 231, 0.6);
+        font-size: 0.9rem;
+    }
+
+    .footer-quote {
+        font-family: var(--font-hand);
+        font-size: 1.3rem !important;
+        color: var(--gold) !important;
+    }
+
+    @media (max-width: 768px) {
+        .footer-content {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>

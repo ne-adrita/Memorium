@@ -1,0 +1,227 @@
+<!--
+============================================================
+MEMORIUM — NOTEBOOK COMPONENT
+============================================================
+
+This is the core visual component of Memorium.
+It represents a physical leather journal with two open pages.
+
+States:
+  - Empty (new journal)
+  - Filled (with content)
+  - Decorated (with stickers/photos - Phase 2)
+
+Usage:
+  <div class="notebook" data-theme="vintage">
+    <div class="notebook-left-page"> ... </div>
+    <div class="notebook-spine"></div>
+    <div class="notebook-right-page"> ... </div>
+  </div>
+
+Dependencies:
+  - notebook.css
+  - page.css (for individual pages)
+  - variables.css (for theme tokens)
+============================================================
+-->
+
+<!-- ==========================================
+     NOTEBOOK CONTAINER
+     ========================================== -->
+     <link rel="stylesheet" href="/frontend/components/notebook/notebook.css">
+<script src="/frontend/components/notebook/notebook.js"></script>
+     <div class="notebook" data-theme="vintage" data-state="open">
+
+        <!--
+        =============================================
+        BOOK COVER (Background)
+        =============================================
+        Visible edges around the open pages
+        Creates the "leather journal" feel
+        -->
+        <div class="notebook-cover">
+            <div class="notebook-cover-edge notebook-cover-edge--top"></div>
+            <div class="notebook-cover-edge notebook-cover-edge--bottom"></div>
+            <div class="notebook-cover-edge notebook-cover-edge--left"></div>
+            <div class="notebook-cover-edge notebook-cover-edge--right"></div>
+            
+            <!-- Corner details for realism -->
+            <div class="notebook-cover-corner notebook-cover-corner--tl"></div>
+            <div class="notebook-cover-corner notebook-cover-corner--tr"></div>
+            <div class="notebook-cover-corner notebook-cover-corner--bl"></div>
+            <div class="notebook-cover-corner notebook-cover-corner--br"></div>
+        </div>
+    
+        <!--
+        =============================================
+        BOOKMARK RIBBON
+        =============================================
+        Hangs from the top of the spine
+        -->
+        <div class="notebook-bookmark" aria-hidden="true">
+            <div class="notebook-bookmark-ribbon"></div>
+        </div>
+    
+        <!--
+        =============================================
+        LEFT PAGE
+        =============================================
+        The writing page — where users pour their thoughts
+        -->
+        <div class="notebook-page notebook-page--left" data-page="12">
+            
+            <!-- Page shadow for depth (left side curve) -->
+            <div class="notebook-page-shadow notebook-page-shadow--left"></div>
+            
+            <!-- Page content area -->
+            <div class="notebook-page-content">
+                
+                <!-- Page Header: Date & Metadata -->
+                <header class="page-header">
+                    <div class="page-meta">
+                        <span class="page-date-icon" aria-hidden="true">📅</span>
+                        <time class="page-date" datetime="2026-02-14">
+                            Friday, February 14, 2026
+                        </time>
+                    </div>
+                    <div class="page-indicators">
+                        <span class="page-weather" title="Sunny">☀️</span>
+                        <span class="page-mood" title="Happy">😊</span>
+                    </div>
+                </header>
+    
+                <!-- Page Divider -->
+                <hr class="page-divider" aria-hidden="true">
+    
+                <!-- Page Body: Writing Area -->
+                <div class="page-body">
+                    <div 
+                        class="page-writing-area" 
+                        contenteditable="true"
+                        aria-label="Journal entry"
+                        role="textbox"
+                        aria-multiline="true"
+                        data-placeholder="Dear Diary...">
+                        
+                        <p class="page-paragraph">
+                            <span class="page-first-letter">T</span>oday was one of those quiet, 
+                            rainy days that make you want to curl up with a warm cup of coffee 
+                            and just... write.
+                        </p>
+                        
+                        <p class="page-paragraph">
+                            The sound of raindrops against the window, the soft glow of the 
+                            candle on my desk — it all feels so peaceful. I've been thinking 
+                            a lot about memories lately. How they fade. How they change.
+                        </p>
+                        
+                        <p class="page-paragraph">
+                            Some moments stay with us forever while others slip away like 
+                            morning mist. That's why I started this journal.
+                        </p>
+                    </div>
+                </div>
+    
+                <!-- Page Footer: Page Number -->
+                <footer class="page-footer">
+                    <span class="page-number">12</span>
+                </footer>
+            </div>
+    
+            <!-- Decoration Layer (Phase 2 - empty for now) -->
+            <div class="page-decoration-layer" aria-hidden="true">
+                <!-- Stickers, tape, flowers will go here in Phase 2 -->
+            </div>
+        </div>
+    
+        <!--
+        =============================================
+        SPINE
+        =============================================
+        The center fold between two pages
+        Creates depth and realism
+        -->
+        <div class="notebook-spine" aria-hidden="true">
+            <div class="notebook-spine-line"></div>
+            <div class="notebook-spine-shadow"></div>
+        </div>
+    
+        <!--
+        =============================================
+        RIGHT PAGE
+        =============================================
+        The decoration page — for photos, stickers, memories
+        -->
+        <div class="notebook-page notebook-page--right" data-page="13">
+            
+            <!-- Page shadow for depth (right side curve) -->
+            <div class="notebook-page-shadow notebook-page-shadow--right"></div>
+            
+            <!-- Page content area -->
+            <div class="notebook-page-content">
+                
+                <!-- Page Header -->
+                <header class="page-header">
+                    <div class="page-meta">
+                        <span class="page-date-icon" aria-hidden="true">📅</span>
+                        <time class="page-date" datetime="2026-02-14">
+                            Friday, February 14, 2026
+                        </time>
+                    </div>
+                </header>
+    
+                <!-- Page Divider -->
+                <hr class="page-divider" aria-hidden="true">
+    
+                <!-- Page Body: Decoration Area -->
+                <div class="page-body">
+                    <div class="page-decoration-area" data-state="empty">
+                        
+                        <!-- Empty State -->
+                        <div class="page-empty-state">
+                            <span class="page-empty-icon" aria-hidden="true">🎨</span>
+                            <p class="page-empty-text">
+                                Your canvas awaits.<br>
+                                Drag photos, stickers, and memories here.
+                            </p>
+                        </div>
+    
+                        <!-- Future: Decoration items will go here -->
+                        <!--
+                        <div class="decoration-item decoration-item--photo">
+                            <img src="..." alt="Sunset photo">
+                        </div>
+                        <div class="decoration-item decoration-item--sticker">
+                            🌸
+                        </div>
+                        <div class="decoration-item decoration-item--tape">
+                            [washi tape]
+                        </div>
+                        -->
+                    </div>
+                </div>
+    
+                <!-- Page Footer -->
+                <footer class="page-footer">
+                    <span class="page-number">13</span>
+                </footer>
+            </div>
+    
+            <!-- Decoration Layer (Phase 2) -->
+            <div class="page-decoration-layer" aria-hidden="true"></div>
+        </div>
+    
+        <!--
+        =============================================
+        PAGE NAVIGATION HINTS
+        =============================================
+        Subtle indicators for page turning
+        -->
+        <div class="notebook-nav-hint notebook-nav-hint--prev" aria-hidden="true">
+            <span>◀</span>
+        </div>
+        <div class="notebook-nav-hint notebook-nav-hint--next" aria-hidden="true">
+            <span>▶</span>
+        </div>
+    
+    </div>

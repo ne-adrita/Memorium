@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Memorium — Settings</title>
+    <meta name="title" content="Memorium — Settings">
+    <meta name="description" content="Account and application settings">
+    <meta name="keywords" content="settings, account, preferences">
+    <meta name="author" content="Memorium">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://memorium.app/settings">
+    <meta property="og:title" content="Memorium — Settings">
+    <meta property="og:description" content="Account and application settings">
+    <meta property="og:image" content="https://memorium.app/assets/images/og-image.jpg">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#4A3428">
+    <meta name="msapplication-TileColor" content="#4A3428">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Caveat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animation.css">
+    <link rel="stylesheet" href="css/responsive.css">
+
+    <style>
+        /* Settings Page Specific Styles */
+        body {
+            min-height: 100vh;
+            background: var(--background);
+        }
+
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-5);
+        }
+
+        .settings-header {
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+
+        .settings-header h1 {
+            font-family: var(--font-heading);
+            font-size: var(--fs-3xl);
+            font-weight: var(--fw-bold);
+            color: var(--color-primary-dark);
+            margin-bottom: var(--space-2);
+        }
+
+        .settings-header p {
+            color: var(--color-text-light);
+            font-size: var(--fs-lg);
+        }
+
+        .settings-section {
+            background: var(--paper);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin-bottom: var(--space-6);
+        }
+
+        .settings-section h2 {
+            font-family: var(--font-heading);
+            font-size: var(--fs-lg);
+            font-weight: var(--fw-semibold);
+            color: var(--color-primary-dark);
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-3);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-row {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: var(--space-4);
+            align-items: center;
+            padding: var(--space-3) 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-label {
+            font-family: var(--font-heading);
+            font-size: var(--fs-sm);
+            font-weight: var(--fw-semibold);
+            color: var(--color-text-dark);
+        }
+
+        .setting-value {
+            color: var(--color-text-dark);
+            font-size: var(--fs-md);
+        }
+
+        .setting-value.select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B4F3B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 20px;
+        }
+
+        .setting-row.toggles {
+            grid-template-columns: 120px auto;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--paper);
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+
+        .toggle-switch.active {
+            background: var(--color-primary);
+        }
+
+        .setting-description {
+            grid-column: 2;
+            font-size: var(--fs-sm);
+            color: var(--color-text-muted);
+            margin-top: var(--space-1);
+        }
+
+        .btn-default {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: var(--button-padding-y) var(--button-padding-x);
+            border-radius: var(--button-radius);
+            font-family: var(--font-heading);
+            font-size: var(--fs-md);
+            font-weight: var(--fw-medium);
+            text-decoration: none;
+            color: var(--color-primary);
+            border: 1px solid var(--color-primary);
+            transition: all var(--transition-normal);
+        }
+
+        .btn-default:hover {
+            background: var(--color-primary);
+            color: var(--color-paper);
+        }
+
+        .danger-zone {
+            background: rgba(184, 92, 92, 0.08);
+            border-radius: var(--radius-md);
+            padding: var(--space-5);
+            margin-top: var(--space-6);
+        }
+
+        .danger-zone h3 {
+            font-family: var(--font-heading);
+            font-size: var(--fs-sm);
+            font-weight: var(--fw-semibold);
+            color: var(--danger);
+            margin-bottom: var(--space-3);
+        }
+
+        .danger-zone p {
+            color: var(--color-text-muted);
+            font-size: var(--fs-sm);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         NAVBAR
+         ============================================================ -->
+    <header class="navbar" id="navbar" role="banner">
+        <nav class="nav-container" aria-label="Main navigation">
+            
+            <!-- Brand Logo -->
+            <a href="index.html" class="nav-brand" aria-label="Memorium Home">
+                <span class="nav-brand-icon">📖</span>
+                Memor<span>ium</span>
+            </a>
+            
+            <!-- Navigation Links -->
+            <ul class="nav-links" role="list">
+                <li><a href="index.html" class="nav-link active">Home</a></li>
+                <li><a href="bookshelf.html" class="nav-link">My Journals</a></li>
+                <li><a href="journal.html" class="nav-link">Journal</a></li>
+                <li><a href="login.html" class="btn btn-outline btn-sm">Sign In</a></li>
+            </ul>
+            
+            <!-- Mobile Toggle -->
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- ============================================================
+         MAIN CONTENT
+         ============================================================ -->
+    <main>
+        <div class="settings-container">
+
+            <!-- Account Section -->
+            <div class="settings-section">
+                <h2>Account Details</h2>
+                
+                <div class="setting-row">
+                    <span class="setting-label">Username</span>
+                    <span class="setting-value">alexandra.m</span>
+                </div>
+
+                <div class="setting-row">
+                    <span class="setting-label">Email</span>
+                    <span class="setting-value">alexandra@example.com</span>
+                </div>
+
+                <div class="setting-row">
+                    <span class="setting-label">Member since</span>
+                    <span class="setting-value">February 2026</span>
+                </div>
+
+                <div class="setting-row">
+                    <span class="setting-label">Preferred theme</span>
+                    <span class="setting-value select">
+                        <span>Light</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Notification Preferences -->
+            <div class="settings-section">
+                <h2>Notification Preferences</h2>
+                
+                <div class="setting-row toggles">
+                    <span class="setting-label">New journal entries</span>
+                    <div class="toggle-switch" id="toggle1"></div>
+                </div>
+                <div class="setting-description">Receive notifications when you add new entries</div>
+            </div>
+
+            <div class="settings-section">
+                <h2>Reminders</div>
+                <div class="setting-row toggles">
+                    <span class="setting-label">Daily writing reminder</span>
+                    <div class="toggle-switch" id="toggle2"></div>
+                </div>
+                <div class="setting-description">Get reminded to write each day</div>
+            </div>
+
+            <div class="settings-section">
+                <h2>Memory Backup</h2>
+                <p>Your memories are automatically backed up and can be exported at any time.</p>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="danger-zone">
+                <h3>Danger Zone</h3>
+                <p>You can delete your account and all memories permanently.</p>
+                <button class="btn btn-outline" style="width: 100%; margin-top: var(--space-3);">Delete Account</button>
+            </div>
+
+            <!-- Save Button -->
+            <div class="flex--center section-footer" style="margin-top: var(--space-8);">
+                <button class="btn btn-primary">Save Changes</button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 Memorium. Crafted for memory keepers.</p>
+            <p class="footer-quote">"Some memories should grow old with you."</p>
+        </div>
+    </footer>
+
+    <!-- ============================================================
+         SCRIPTS
+         ============================================================ -->
+    <script src="js/app.js"></script>
+    
+    <script>
+        // Inline critical JS for immediate interactivity
+        (function() {
+            // Navbar scroll effect
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+            
+            // Mobile nav toggle
+            const toggle = document.getElementById('navToggle');
+            const navLinks = document.querySelector('.nav-links');
+            let menuOpen = false;
+            
+            toggle.addEventListener('click', function() {
+                menuOpen = !menuOpen;
+                toggle.setAttribute('aria-expanded', menuOpen);
+                // Full mobile menu functionality in app.js
+            });
+            
+            // Active nav link on scroll
+            const sections = document.querySelectorAll('section[id]');
+            const navItems = document.querySelectorAll('.nav-link');
+            
+            window.addEventListener('scroll', function() {
+                let current = '';
+                sections.forEach(function(section) {
+                    const sectionTop = section.offsetTop - 100;
+                    if (window.scrollY >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navItems.forEach(function(link) {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        })();
+    </script>
+
+</body>
+</html>

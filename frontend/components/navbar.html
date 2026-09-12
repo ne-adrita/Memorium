@@ -1,0 +1,190 @@
+<!-- Navbar Component -->
+<nav class="navbar" id="navbar">
+    <div class="nav-container">
+        <a href="index.html" class="nav-brand">
+            Memor<span class="gold">ium</span>
+        </a>
+        
+        <div class="navbar-links" id="navLinks">
+            <a href="index.html" class="nav-link active">Home</a>
+            <a href="bookshelf.html" class="nav-link">My Journals</a>
+            <a href="#features" class="nav-link">Features</a>
+            <a href="login.html" class="btn btn-outline btn-sm">Sign In</a>
+            <a href="register.html" class="btn btn-primary btn-sm">Start Writing</a>
+        </div>
+
+        <button class="navbar-toggle" id="navToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+</nav>
+
+<style>
+    .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--nav-height);
+        background: rgba(248, 241, 231, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(107, 79, 59, 0.08);
+        z-index: 1000;
+        transition: all var(--transition);
+    }
+
+    .navbar.scrolled {
+        box-shadow: var(--shadow-md);
+        background: rgba(248, 241, 231, 0.98);
+    }
+
+    .nav-container {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        padding: 0 2rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .nav-brand {
+        font-family: var(--font-heading);
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--dark-leather);
+        letter-spacing: -0.5px;
+    }
+
+    .nav-brand .gold { color: var(--gold); }
+
+    .navbar-links {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .nav-link {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        color: var(--light-text);
+        transition: color var(--transition);
+        position: relative;
+    }
+
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: var(--gold);
+        transition: width var(--transition);
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+        color: var(--brown);
+    }
+
+    .nav-link:hover::after,
+    .nav-link.active::after {
+        width: 100%;
+    }
+
+    /* Buttons in nav */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1.4rem;
+        border-radius: var(--radius);
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all var(--transition);
+    }
+
+    .btn-outline {
+        border: 2px solid var(--brown);
+        color: var(--brown);
+        background: transparent;
+    }
+
+    .btn-outline:hover {
+        background: var(--brown);
+        color: var(--paper);
+    }
+
+    .btn-primary {
+        background: var(--brown);
+        color: var(--paper);
+    }
+
+    .btn-primary:hover {
+        background: var(--dark-leather);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-sm { font-size: 0.85rem; }
+
+    /* Toggle */
+    .navbar-toggle {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        padding: 8px;
+    }
+
+    .navbar-toggle span {
+        width: 22px;
+        height: 2px;
+        background: var(--dark-leather);
+        border-radius: 2px;
+        transition: all var(--transition);
+    }
+
+    @media (max-width: 768px) {
+        .navbar-links {
+            display: none;
+            position: absolute;
+            top: var(--nav-height);
+            left: 0;
+            right: 0;
+            flex-direction: column;
+            background: var(--paper);
+            padding: 2rem;
+            border-bottom: 1px solid rgba(107, 79, 59, 0.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .navbar-links.active { display: flex; }
+        .navbar-toggle { display: flex; }
+    }
+</style>
+
+<script>
+    // This script will run when component is loaded
+    (function() {
+        const nav = document.getElementById('navbar');
+        const toggle = document.getElementById('navToggle');
+        const links = document.getElementById('navLinks');
+
+        // Scroll effect
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Mobile toggle
+        toggle.addEventListener('click', () => {
+            links.classList.toggle('active');
+        });
+    })();
+</script>
