@@ -1,4 +1,4 @@
-const fs = require('fs');
+const storage = require('../storage');
 const Page = require('../models/Page');
 const Journal = require('../models/Journal');
 const Decoration = require('../models/Decoration');
@@ -23,8 +23,10 @@ async function ensurePageOwnership(pageId, userId) {
 
 const listPages = asyncHandler(async (req, res) => {
   const { journalId } = req.params;
-  if (!journalId) return res.status(404).json({ success: false, message: 'Use /api/journals/:journalId/pages' });
-  if (!isValidObjectId(journalId)) return res.status(400).json({ success: false, message: 'Invalid journal ID' });
+  if (!journalId)
+    return res.status(404).json({ success: false, message: 'Use /api/journals/:journalId/pages' });
+  if (!isValidObjectId(journalId))
+    return res.status(400).json({ success: false, message: 'Invalid journal ID' });
   const { error } = await ensureJournalOwnership(journalId, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
   const pages = await Page.find({ journal: journalId }).sort({ pageNumber: 1 });
@@ -33,7 +35,8 @@ const listPages = asyncHandler(async (req, res) => {
 
 const getPage = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) return res.status(400).json({ success: false, message: 'Invalid page ID' });
+  if (!isValidObjectId(id))
+    return res.status(400).json({ success: false, message: 'Invalid page ID' });
   const { error, page } = await ensurePageOwnership(id, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
   res.json({ success: true, data: page });
@@ -41,7 +44,8 @@ const getPage = asyncHandler(async (req, res) => {
 
 const createPage = asyncHandler(async (req, res) => {
   const { journalId } = req.params;
-  if (!isValidObjectId(journalId)) return res.status(400).json({ success: false, message: 'Invalid journal ID' });
+  if (!isValidObjectId(journalId))
+    return res.status(400).json({ success: false, message: 'Invalid journal ID' });
   const { error } = await ensureJournalOwnership(journalId, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
 
@@ -66,14 +70,18 @@ const createPage = asyncHandler(async (req, res) => {
     });
     res.status(201).json({ success: true, data: page });
   } catch (err) {
-    if (err.code === 11000) return res.status(409).json({ success: false, message: 'Page number already exists for this journal' });
+    if (err.code === 11000)
+      return res
+        .status(409)
+        .json({ success: false, message: 'Page number already exists for this journal' });
     throw err;
   }
 });
 
 const updatePage = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) return res.status(400).json({ success: false, message: 'Invalid page ID' });
+  if (!isValidObjectId(id))
+    return res.status(400).json({ success: false, message: 'Invalid page ID' });
   const { error } = await ensurePageOwnership(id, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
 
@@ -81,7 +89,8 @@ const updatePage = asyncHandler(async (req, res) => {
   const update = {};
   if (pageNumber !== undefined) {
     const num = Number(pageNumber);
-    if (!Number.isInteger(num) || num < 1) return res.status(400).json({ success: false, message: 'pageNumber must be integer >=1' });
+    if (!Number.isInteger(num) || num < 1)
+      return res.status(400).json({ success: false, message: 'pageNumber must be integer >=1' });
     update.pageNumber = num;
   }
   if (title !== undefined) update.title = title;
@@ -93,7 +102,8 @@ const updatePage = asyncHandler(async (req, res) => {
     update.theme = theme;
   }
   if (journal !== undefined) {
-    if (!isValidObjectId(journal)) return res.status(400).json({ success: false, message: 'Invalid journal ID' });
+    if (!isValidObjectId(journal))
+      return res.status(400).json({ success: false, message: 'Invalid journal ID' });
     // new journal must also be owned by user
     const { error: jErr } = await ensureJournalOwnership(journal, req.user.id);
     if (jErr) return res.status(jErr.status).json({ success: false, message: jErr.message });
@@ -103,21 +113,26 @@ const updatePage = asyncHandler(async (req, res) => {
     const page = await Page.findByIdAndUpdate(id, update, { new: true, runValidators: true });
     res.json({ success: true, data: page });
   } catch (err) {
-    if (err.code === 11000) return res.status(409).json({ success: false, message: 'Duplicate page number for journal' });
+    if (err.code === 11000)
+      return res.status(409).json({ success: false, message: 'Duplicate page number for journal' });
     throw err;
   }
 });
 
 const deletePage = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) return res.status(400).json({ success: false, message: 'Invalid page ID' });
+  if (!isValidObjectId(id))
+    return res.status(400).json({ success: false, message: 'Invalid page ID' });
   const { error, page } = await ensurePageOwnership(id, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
   await Decoration.deleteMany({ page: id });
-  // Cleanup images for this page
+  // Cleanup images for this page via storage adapter
   const images = await Image.find({ page: id });
   for (const img of images) {
-    try { if (fs.existsSync(img.path)) fs.unlinkSync(img.path); } catch (_) {}
+    try {
+      const pid = img.publicId || img.path || img.url;
+      if (pid) await storage.delete(pid);
+    } catch (_) {}
   }
   await Image.deleteMany({ page: id });
   await page.deleteOne();

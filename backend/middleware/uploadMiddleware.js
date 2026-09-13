@@ -1,11 +1,10 @@
 const multer = require('multer');
 const path = require('path');
-const crypto = require('crypto');
 const fs = require('fs');
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'images');
 
-// Ensure directory exists
+// Ensure directory exists (still used by localAdapter directly)
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -13,19 +12,8 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 const ALLOWED_MIME = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
-const storage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    cb(null, UPLOAD_DIR);
-  },
-  filename(_req, file, cb) {
-    // Generate safe unique filename, ignore original
-    const ext = path.extname(file.originalname).toLowerCase();
-    // Map mime to safe extension if needed
-    const safeExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
-    const unique = crypto.randomBytes(16).toString('hex') + '-' + Date.now() + safeExt;
-    cb(null, unique);
-  },
-});
+// Use memoryStorage so we can pipe buffer to pluggable storage adapter (local or cloudinary)
+const storage = multer.memoryStorage();
 
 function fileFilter(_req, file, cb) {
   if (ALLOWED_MIME.includes(file.mimetype)) {

@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
+const { apiLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./routes/authRoutes');
 const journalRoutes = require('./routes/journalRoutes');
@@ -21,7 +23,10 @@ app.set('trust proxy', 1);
 // CORS — allow FRONTEND_URL in production, permissive in development
 const frontendUrl = (process.env.FRONTEND_URL || '').trim();
 const allowedOrigins = frontendUrl
-  ? frontendUrl.split(',').map((s) => s.trim()).filter(Boolean)
+  ? frontendUrl
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
   : [];
 
 app.use(
@@ -50,9 +55,13 @@ app.use(
   })
 );
 
-// Body parsing with size limits
+// Body parsing with size limits + cookies
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(cookieParser());
+
+// General rate limit for all API routes
+app.use('/api', apiLimiter);
 
 // Health check — indicates API running and DB status (no secrets)
 app.get('/api/health', (req, res) => {
@@ -127,14 +136,16 @@ async function start() {
   try {
     await connectDB();
     const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Memorium API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+      console.log(
+        `Memorium API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`
+      );
       if (frontendServed) console.log('Frontend static serving: enabled');
       if (frontendUrl) console.log('Allowed CORS origins:', allowedOrigins.join(', '));
       else console.log('CORS: FRONTEND_URL not set — permissive in dev, warn in prod');
     });
 
     // Graceful shutdown
-    const shutdown = (signal) => {
+    const shutdown = signal => {
       console.log(`\nReceived ${signal}. Shutting down gracefully...`);
       server.close(async () => {
         try {
@@ -150,7 +161,7 @@ async function start() {
     process.on('SIGINT', () => shutdown('SIGINT'));
 
     // Handle unhandled rejections without leaking internals
-    process.on('unhandledRejection', (err) => {
+    process.on('unhandledRejection', err => {
       console.error('Unhandled rejection:', err && err.message ? err.message : err);
     });
   } catch (err) {

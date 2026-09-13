@@ -1,0 +1,30 @@
+{
+  "name": "memorium",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Memorium - The Living Journal",
+  "scripts": {
+    "lint": "eslint backend --ext .js && eslint frontend --ext .js",
+    "lint:fix": "eslint backend --ext .js --fix && eslint frontend --ext .js --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.9"
+  },
+  "lint-staged": {
+    "backend/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "frontend/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}

@@ -17,6 +17,10 @@ function authMiddleware(req, res, next) {
   }
   try {
     const decoded = verifyToken(token);
+    // Reject refresh tokens for resource access
+    if (decoded.tokenType === 'refresh') {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
     // payload is { userId: ... } per authController
     const userId = decoded.userId || decoded.id || decoded._id;
     if (!userId) {

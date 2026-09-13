@@ -1,5 +1,7 @@
 # Memorium — The Living Journal
 
+[![CI](https://github.com/ne-adrita/Memorium/actions/workflows/ci.yml/badge.svg)](https://github.com/ne-adrita/Memorium/actions/workflows/ci.yml)
+
 A vintage leather diary on the web. Plain HTML/CSS/JavaScript frontend, Node.js + Express backend, MongoDB Atlas, JWT auth, and secure image uploads.
 
 > Design preserved: vintage leather aesthetic, paper texture, Cormorant Garamond + Lora, `#6B4F3B` / `#C9A227` / `#F8F1E7`, coffee stains, torn paper, sticky notes, responsive notebook.

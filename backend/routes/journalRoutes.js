@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
+const { validateJournalCreate, validateJournalUpdate } = require('../middleware/validate');
 const {
   listJournals,
   getJournal,
@@ -13,9 +14,9 @@ const {
 router.use(authMiddleware);
 
 router.get('/', listJournals);
-router.post('/', createJournal);
+router.post('/', validateJournalCreate, createJournal);
 router.get('/:id', getJournal);
-router.put('/:id', updateJournal);
+router.put('/:id', validateJournalUpdate, updateJournal);
 router.delete('/:id', deleteJournal);
 
 module.exports = router;

@@ -1,0 +1,28 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "extends": ["eslint:recommended", "prettier"],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "script"
+  },
+  "globals": {
+    "MemoriumAPI": "readonly",
+    "MemoriumAuth": "readonly",
+    "MemoriumNotebook": "readonly",
+    "MemoriumBookshelf": "readonly",
+    "MemoriumJournal": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-console": "off",
+    "prefer-const": "warn",
+    "no-var": "error",
+    "no-empty": ["error", { "allowEmptyCatch": true }],
+    "no-func-assign": "warn"
+  },
+  "ignorePatterns": ["node_modules/"]
+}

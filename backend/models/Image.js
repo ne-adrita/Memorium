@@ -37,9 +37,23 @@ const imageSchema = new mongoose.Schema(
       min: 0,
       max: 5 * 1024 * 1024,
     },
-    path: {
+    // Pluggable storage: publicId is the primary identifier (filename for local, public_id for cloudinary)
+    publicId: {
       type: String,
       required: true,
+      trim: true,
+    },
+    // url: secure_url for cloudinary, file path for local
+    url: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    // Legacy local path kept optional for backward compatibility / migration
+    path: {
+      type: String,
+      required: false,
+      default: null,
     },
     position: {
       x: { type: Number, default: 24, min: 0 },

@@ -1,4 +1,4 @@
-const fs = require('fs');
+const storage = require('../storage');
 const Journal = require('../models/Journal');
 const Page = require('../models/Page');
 const Decoration = require('../models/Decoration');
@@ -13,7 +13,8 @@ const listJournals = asyncHandler(async (req, res) => {
 
 const getJournal = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) return res.status(400).json({ success: false, message: 'Invalid journal ID' });
+  if (!isValidObjectId(id))
+    return res.status(400).json({ success: false, message: 'Invalid journal ID' });
   const journal = await Journal.findById(id);
   if (!journal) return res.status(404).json({ success: false, message: 'Journal not found' });
   if (journal.owner.toString() !== req.user.id) {
@@ -38,7 +39,8 @@ const createJournal = asyncHandler(async (req, res) => {
 
 const updateJournal = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) return res.status(400).json({ success: false, message: 'Invalid journal ID' });
+  if (!isValidObjectId(id))
+    return res.status(400).json({ success: false, message: 'Invalid journal ID' });
   const journal = await Journal.findById(id);
   if (!journal) return res.status(404).json({ success: false, message: 'Journal not found' });
   if (journal.owner.toString() !== req.user.id) {
@@ -46,7 +48,8 @@ const updateJournal = asyncHandler(async (req, res) => {
   }
   const { title, description, cover } = req.body;
   if (title !== undefined) {
-    if (!title.trim()) return res.status(400).json({ success: false, message: 'Title cannot be empty' });
+    if (!title.trim())
+      return res.status(400).json({ success: false, message: 'Title cannot be empty' });
     journal.title = title.trim();
   }
   if (description !== undefined) journal.description = description;
@@ -57,20 +60,24 @@ const updateJournal = asyncHandler(async (req, res) => {
 
 const deleteJournal = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) return res.status(400).json({ success: false, message: 'Invalid journal ID' });
+  if (!isValidObjectId(id))
+    return res.status(400).json({ success: false, message: 'Invalid journal ID' });
   const journal = await Journal.findById(id);
   if (!journal) return res.status(404).json({ success: false, message: 'Journal not found' });
   if (journal.owner.toString() !== req.user.id) {
     return res.status(403).json({ success: false, message: 'Forbidden' });
   }
   const pages = await Page.find({ journal: id }).select('_id');
-  const pageIds = pages.map((p) => p._id);
+  const pageIds = pages.map(p => p._id);
   if (pageIds.length) {
     await Decoration.deleteMany({ page: { $in: pageIds } });
-    // Cleanup images for all pages in this journal
+    // Cleanup images for all pages in this journal via storage adapter
     const images = await Image.find({ page: { $in: pageIds } });
     for (const img of images) {
-      try { if (fs.existsSync(img.path)) fs.unlinkSync(img.path); } catch (_) {}
+      try {
+        const pid = img.publicId || img.path || img.url;
+        if (pid) await storage.delete(pid);
+      } catch (_) {}
     }
     await Image.deleteMany({ page: { $in: pageIds } });
     await Page.deleteMany({ journal: id });
