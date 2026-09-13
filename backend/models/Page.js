@@ -6,7 +6,6 @@ const pageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Journal',
       required: [true, 'Journal reference is required'],
-      index: true,
     },
     pageNumber: {
       type: Number,

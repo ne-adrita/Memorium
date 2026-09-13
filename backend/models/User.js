@@ -48,9 +48,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Email must be unique — creates unique index
-userSchema.index({ email: 1 }, { unique: true });
-
 // Virtual for journals owned by user (not stored, for population)
 userSchema.virtual('journals', {
   ref: 'Journal',

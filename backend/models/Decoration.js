@@ -6,7 +6,6 @@ const decorationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Page',
       required: [true, 'Page reference is required'],
-      index: true,
     },
     type: {
       type: String,

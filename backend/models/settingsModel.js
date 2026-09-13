@@ -13,7 +13,6 @@ const settingsSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
       unique: true,
-      index: true,
     },
     theme: {
       type: String,
