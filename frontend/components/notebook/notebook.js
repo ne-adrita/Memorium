@@ -480,12 +480,8 @@
             el.style.border = '1px solid #DDD1BF';
             el.style.background = '#FFF';
             el.style.padding = '4px';
-            // Fetch image with auth and create blob URL
-            const token = window.MemoriumAPI.getToken();
-            fetch(window.MemoriumAPI.API_BASE + '/api/images/' + img._id, {
-              headers: token ? { Authorization: 'Bearer ' + token } : {},
-            })
-              .then(r => (r.ok ? r.blob() : Promise.reject()))
+            // Fetch image via centralized API wrapper (handles JWT/refresh)
+            window.MemoriumAPI.getImageBlob(img._id)
               .then(blob => {
                 const url = URL.createObjectURL(blob);
                 const im = document.createElement('img');
@@ -712,31 +708,97 @@
       fileInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
       fileInput.style.display = 'none';
       document.body.appendChild(fileInput);
+      const showImagePreview = file => {
+        return new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const overlay = document.createElement('div');
+            overlay.className = 'memorium-preview-overlay';
+            overlay.style.cssText =
+              'position:fixed;inset:0;background:rgba(43,33,27,.55);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+            overlay.innerHTML =
+              '<div role="dialog" aria-modal="true" aria-label="Image preview" style="background:var(--paper);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.2);max-width:min(92vw,420px);width:100%;overflow:hidden">' +
+              '<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(to bottom, var(--paper), var(--old-paper))">' +
+              '<span style="font-family:var(--heading-font);font-weight:600;color:var(--text-dark)">Preview — ' +
+              file.name.replace(/</g, '&lt;') +
+              '</span><button data-close style="border:none;background:var(--paper);width:28px;height:28px;border-radius:50%;border:1px solid var(--border);cursor:pointer">✕</button></div>' +
+              '<div style="padding:14px"><img alt="preview" style="display:block;max-width:100%;max-height:320px;margin:0 auto;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm)"><p style="margin-top:10px;font-family:var(--heading-font);font-size:.85rem;color:var(--text-muted);text-align:center">' +
+              (file.size / 1024).toFixed(1) +
+              ' KB • ' +
+              file.type +
+              '</p></div>' +
+              '<div style="display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border);justify-content:flex-end;background:var(--paper)">' +
+              '<button data-cancel style="padding:.5rem 1rem;border-radius:999px;border:1px solid var(--border);background:var(--paper);font-family:var(--heading-font);cursor:pointer">Cancel</button>' +
+              '<button data-confirm style="padding:.5rem 1.1rem;border-radius:999px;border:none;background:var(--primary);color:var(--paper);font-family:var(--heading-font);cursor:pointer">Upload</button></div></div>';
+            const img = overlay.querySelector('img');
+            img.src = ev.target.result;
+            const close = () => {
+              overlay.remove();
+              document.removeEventListener('keydown', onKey);
+              resolve(false);
+            };
+            const confirm = () => {
+              overlay.remove();
+              document.removeEventListener('keydown', onKey);
+              resolve(true);
+            };
+            const onKey = e => {
+              if (e.key === 'Escape') close();
+            };
+            document.addEventListener('keydown', onKey);
+            overlay.addEventListener('click', e => {
+              if (e.target === overlay) close();
+            });
+            overlay.querySelector('[data-close]').addEventListener('click', close);
+            overlay.querySelector('[data-cancel]').addEventListener('click', close);
+            overlay.querySelector('[data-confirm]').addEventListener('click', confirm);
+            document.body.appendChild(overlay);
+            overlay.querySelector('[data-confirm]').focus();
+          };
+          reader.readAsDataURL(file);
+        });
+      };
+
       fileInput.addEventListener('change', async () => {
         const file = fileInput.files[0];
         if (!file) return;
         if (file.size > 5 * 1024 * 1024) {
-          alert('Image too large. Max 5 MB');
+          if (window.MemoriumUtils)
+            window.MemoriumUtils.showToast('Image too large. Max 5 MB', 'error');
+          else alert('Image too large. Max 5 MB');
           fileInput.value = '';
           return;
         }
         if (
           !['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)
         ) {
-          alert('Unsupported image type');
+          if (window.MemoriumUtils)
+            window.MemoriumUtils.showToast('Unsupported image type', 'error');
+          else alert('Unsupported image type');
           fileInput.value = '';
           return;
         }
+        const confirmed = await showImagePreview(file);
+        if (!confirmed) {
+          fileInput.value = '';
+          return;
+        }
+        const toast = window.MemoriumUtils
+          ? window.MemoriumUtils.showToast('Uploading…', 'info')
+          : null;
         // Use API if available
         if (window.MemoriumAPI && window.MemoriumAPI.isAuthed()) {
           const state = window.MemoriumNotebook ? window.MemoriumNotebook.getState() : null;
           const cur = state ? state.pages[state.currentPageIndex] : null;
-          const journalId = localStorage.getItem('memorium-current-journal');
-          // Need pageId - try to get from state
           if (cur && cur._apiId) {
+            // show loading on notebook
+            const nb = document.querySelector('.notebook');
+            const loader =
+              window.MemoriumUtils && nb
+                ? window.MemoriumUtils.showLoading(nb, 'Uploading image…')
+                : null;
             try {
               const res = await window.MemoriumAPI.uploadImage(cur._apiId, file, { x: 30, y: 30 });
-              // Add to local state for immediate display
               if (cur) {
                 if (!cur.images) cur.images = [];
                 cur.images.push({
@@ -752,25 +814,35 @@
                   localStorage.setItem('memorium-state-v2', JSON.stringify(state));
                 } catch {}
                 renderImages();
+                if (window.MemoriumUtils)
+                  window.MemoriumUtils.showToast('Image uploaded', 'success');
               }
             } catch (e) {
-              alert(e.message || 'Upload failed');
+              if (window.MemoriumUtils)
+                window.MemoriumUtils.showToast(e.message || 'Upload failed', 'error');
+              else alert(e.message || 'Upload failed');
+            } finally {
+              if (loader) window.MemoriumUtils.hideLoading(nb);
+              if (toast) toast.remove();
             }
           } else {
-            alert('Please open a journal first');
+            if (window.MemoriumUtils)
+              window.MemoriumUtils.showToast('Please open a journal first', 'error');
+            else alert('Please open a journal first');
+            if (toast) toast.remove();
           }
         } else {
           // Fallback local preview (no backend)
           const reader = new FileReader();
           reader.onload = ev => {
             const deco = addDecoration('paper', { text: file.name });
-            // Replace paper text with image preview local
             if (deco) {
               deco.type = 'image-local';
               deco.src = ev.target.result;
               renderDecorations();
               renderImages();
             }
+            if (toast) toast.remove();
           };
           reader.readAsDataURL(file);
         }
@@ -899,6 +971,28 @@
     }
     // keyboard
     document.addEventListener('keydown', e => {
+      // Ctrl/Cmd+S — save
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        savePage();
+        if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved', 'success');
+        return;
+      }
+      // Esc — close preview/modal
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        const preview = document.querySelector('.memorium-preview-overlay');
+        if (preview) {
+          preview.remove();
+          return;
+        }
+        const toastContainer = document.getElementById('memorium-toast-container');
+        // close any open modal if needed
+        const modal = document.querySelector('[role="dialog"]');
+        if (modal && modal.closest('.memorium-preview-overlay')) {
+          modal.closest('.memorium-preview-overlay').remove();
+          return;
+        }
+      }
       const t = document.activeElement;
       if (
         t &&
@@ -919,10 +1013,21 @@
         nextPage();
       }
     });
+    // autosave debounced every 5s (keep paper feel, show subtle toast on save)
+    const autosave = debounce(() => {
+      savePage();
+      if (window.MemoriumUtils && document.hasFocus()) {
+        // only toast if user is still on page, avoid spam
+        // show subtle "Autosaved" for API mode, otherwise silent local save
+        if (window.MemoriumAPI && window.MemoriumAPI.isAuthed()) {
+          window.MemoriumUtils.showToast('Autosaved', 'success');
+        }
+      }
+    }, 5000);
     // save on input (not just blur) for better persistence
     Object.values(writingAreas).forEach(area => {
       if (!area) return;
-      area.addEventListener('input', debounce(savePage, 400));
+      area.addEventListener('input', autosave);
       area.addEventListener('blur', savePage);
     });
     // delegate input for future pages' areas (since we swap content, listeners remain on same DOM nodes - fine)

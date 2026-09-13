@@ -46,3 +46,132 @@
     font-size: 2rem;
   }
 }
+
+@media (max-width: 360px) {
+  :root {
+    --nav-height: 55px;
+  }
+
+  /* Hero & sections */
+  .hero {
+    padding: 1.2rem 0.8rem;
+  }
+
+  .hero-title {
+    font-size: 1.9rem;
+    line-height: 1.15;
+  }
+
+  .hero-description {
+    font-size: 0.95rem;
+  }
+
+  .container,
+  .hero-container,
+  .section-container {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
+
+  /* Navbar — keep toggle visible, brand compact */
+  .nav-brand {
+    font-size: 1.1rem;
+  }
+
+  .nav-brand-icon {
+    font-size: 1.1rem;
+  }
+
+  /* Bookshelf grid — single column, card full width */
+  .grid.grid--auto {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+    padding: 0 8px;
+  }
+
+  .card {
+    margin-bottom: 12px !important;
+  }
+
+  /* Notebook — stack pages vertically, allow scroll */
+  .notebook {
+    flex-direction: column;
+    width: 100% !important;
+    max-width: 360px;
+    margin: 0 auto;
+    height: auto;
+    min-height: 420px;
+  }
+
+  .notebook-page {
+    width: 100% !important;
+    min-height: 380px;
+    padding: 18px 14px !important;
+  }
+
+  .notebook-page--left,
+  .notebook-page--right {
+    width: 100% !important;
+  }
+
+  .page-writing-area {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* Decoration bar — wrap, smaller buttons */
+  .decoration-bar {
+    gap: 6px !important;
+    padding: 8px 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .decoration-bar button {
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* Theme & ambient bars */
+  .theme-bar,
+  .ambient-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  /* Forms — full width, no overflow */
+  .register-container,
+  .settings-container {
+    padding: 1.2rem 0.8rem !important;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .form-group input,
+  .setting-row {
+    font-size: 16px; /* prevent iOS zoom */
+  }
+
+  .setting-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  /* Toast container — keep within viewport */
+  #memorium-toast-container {
+    left: 8px !important;
+    right: 8px !important;
+    max-width: none !important;
+  }
+
+  /* Preview overlay */
+  .memorium-preview-overlay > div {
+    max-width: 92vw !important;
+  }
+
+  /* Footer */
+  .footer-content {
+    padding: 1rem 0.8rem;
+  }
+}

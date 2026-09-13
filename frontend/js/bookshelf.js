@@ -14,16 +14,28 @@
     const container = grid ? grid.parentElement : null;
     if (!grid) return;
 
-    // Loading state
+    // Loading state — vintage paper feel
     grid.innerHTML =
-      '<p style="text-align:center;padding:2rem;color:var(--text-muted)">Loading your library…</p>';
+      '<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:2rem;background:var(--paper);border:1px solid var(--border);border-radius:12px"><div class="memorium-spinner" style="width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:memorium-spin .9s linear infinite"></div><p style="color:var(--text-muted);font-family:var(--heading-font)">Loading your library…</p></div>';
+    if (window.MemoriumUtils) {
+      // ensure spinner keyframes exist
+      if (!document.getElementById('memorium-spin-style')) {
+        const s = document.createElement('style');
+        s.id = 'memorium-spin-style';
+        s.textContent = '@keyframes memorium-spin{to{transform:rotate(360deg)}}';
+        document.head.appendChild(s);
+      }
+    }
 
     if (!window.MemoriumAPI || !window.MemoriumAPI.isAuthed()) {
       grid.innerHTML =
-        '<p style="text-align:center;padding:2rem">Please <a href="login.html" style="text-decoration:underline">sign in</a> to see your journals.</p>';
+        '<p style="text-align:center;padding:2rem;background:var(--paper);border:1px solid var(--border);border-radius:12px">Please <a href="login.html" style="text-decoration:underline;color:var(--primary)">sign in</a> to see your journals.</p>';
       return;
     }
 
+    const loader = window.MemoriumUtils
+      ? window.MemoriumUtils.showLoading(container || grid, 'Loading…')
+      : null;
     try {
       const res = await window.MemoriumAPI.listJournals();
       const journals = res.data || [];
@@ -82,16 +94,27 @@
         b.addEventListener('click', async e => {
           e.stopPropagation();
           if (!confirm('Delete this journal and all its pages?')) return;
+          const delLoader = window.MemoriumUtils
+            ? window.MemoriumUtils.showLoading(b.closest('.card') || grid, 'Deleting…')
+            : null;
           try {
             await window.MemoriumAPI.deleteJournal(b.dataset.id);
+            if (window.MemoriumUtils) window.MemoriumUtils.showToast('Journal deleted', 'success');
             render();
           } catch (err) {
-            alert(err.message);
+            if (window.MemoriumUtils) window.MemoriumUtils.showToast(err.message, 'error');
+            else alert(err.message);
+          } finally {
+            if (delLoader && window.MemoriumUtils)
+              window.MemoriumUtils.hideLoading(b.closest('.card') || grid);
           }
         });
       });
     } catch (err) {
-      grid.innerHTML = `<p style="text-align:center;color:var(--danger);padding:2rem">${escapeHtml(err.message)} ${err.status === 401 ? '<br><a href="login.html" style="text-decoration:underline">Sign in</a>' : ''}</p>`;
+      if (window.MemoriumUtils) window.MemoriumUtils.showToast(err.message, 'error');
+      grid.innerHTML = `<p style="text-align:center;color:var(--danger);padding:2rem;background:var(--paper);border:1px solid var(--border);border-radius:12px">${escapeHtml(err.message)} ${err.status === 401 ? '<br><a href="login.html" style="text-decoration:underline;color:var(--primary)">Sign in</a>' : ''}</p>`;
+    } finally {
+      if (loader && window.MemoriumUtils) window.MemoriumUtils.hideLoading(container || grid);
     }
   }
 
@@ -109,9 +132,11 @@
         try {
           const res = await window.MemoriumAPI.createJournal({ title });
           localStorage.setItem('memorium-current-journal', res.data._id);
+          if (window.MemoriumUtils) window.MemoriumUtils.showToast('Journal created', 'success');
           window.location.href = 'journal.html?journalId=' + encodeURIComponent(res.data._id);
         } catch (err) {
-          alert(err.message);
+          if (window.MemoriumUtils) window.MemoriumUtils.showToast(err.message, 'error');
+          else alert(err.message);
         }
       });
     });
@@ -121,10 +146,12 @@
         if (!title) return;
         try {
           const res = await window.MemoriumAPI.createJournal({ title });
+          if (window.MemoriumUtils) window.MemoriumUtils.showToast('Journal created', 'success');
           render();
           localStorage.setItem('memorium-current-journal', res.data._id);
         } catch (err) {
-          alert(err.message);
+          if (window.MemoriumUtils) window.MemoriumUtils.showToast(err.message, 'error');
+          else alert(err.message);
         }
       });
     }
@@ -136,7 +163,9 @@
     b.addEventListener('click', async () => {
       const local = window.MemoriumAPI.getLocalNotebookState();
       if (!local || !local.pages.length) {
-        alert('No local data to migrate');
+        if (window.MemoriumUtils)
+          window.MemoriumUtils.showToast('No local data to migrate', 'error');
+        else alert('No local data to migrate');
         return;
       }
       // Need a journal to migrate into
@@ -150,12 +179,23 @@
           });
           jid = res.data._id;
         } catch (e) {
-          alert('Create journal failed: ' + e.message);
+          if (window.MemoriumUtils)
+            window.MemoriumUtils.showToast('Create journal failed: ' + e.message, 'error');
+          else alert('Create journal failed: ' + e.message);
           return;
         }
       }
-      const res = await window.MemoriumAPI.migrateLocalToBackend(jid);
-      alert('Migrated ' + res.migrated + ' pages');
+      const loader = window.MemoriumUtils
+        ? window.MemoriumUtils.showLoading(document.body, 'Migrating…')
+        : null;
+      try {
+        const res = await window.MemoriumAPI.migrateLocalToBackend(jid);
+        if (window.MemoriumUtils)
+          window.MemoriumUtils.showToast('Migrated ' + res.migrated + ' pages', 'success');
+        else alert('Migrated ' + res.migrated + ' pages');
+      } finally {
+        if (loader && window.MemoriumUtils) window.MemoriumUtils.hideLoading(document.body);
+      }
       // Do NOT delete localStorage silently - ask
       if (confirm('Migration complete. Clear local copy? (You can keep it as backup)')) {
         // keep ambience prefs, only clear notebook state after success

@@ -375,6 +375,38 @@
   function getImageUrl(id) {
     return API_BASE + '/api/images/' + encodeURIComponent(id);
   }
+  async function getImageBlob(id) {
+    const url = API_BASE + '/api/images/' + encodeURIComponent(id);
+    const token = getToken();
+    const headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    let res = await fetch(url, { headers, credentials: 'include' });
+    if (res.status === 401) {
+      try {
+        const newToken = await refreshAccessToken();
+        const retryHeaders = {};
+        if (newToken) retryHeaders['Authorization'] = 'Bearer ' + newToken;
+        res = await fetch(url, { headers: retryHeaders, credentials: 'include' });
+      } catch (e) {
+        clearAuth();
+      }
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = text;
+      }
+      const msg = data && data.message ? data.message : `Image fetch failed (${res.status})`;
+      const err = new Error(msg);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return res.blob();
+  }
   function deleteImage(id) {
     return request('/api/images/' + encodeURIComponent(id), { method: 'DELETE' });
   }
@@ -451,6 +483,7 @@
     uploadImage,
     listImages,
     getImageUrl,
+    getImageBlob,
     deleteImage,
     updateImage,
     getLocalNotebookState,

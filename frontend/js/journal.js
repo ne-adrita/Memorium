@@ -179,8 +179,9 @@
       }
     }
 
-    // Override savePage to also PUT to API (debounced)
+    // Override savePage to also PUT to API (debounced every 5s, vintage toast)
     let saveTimeout = null;
+    let lastToast = 0;
     window.savePage = function () {
       // call original to update local state
       originalSavePage();
@@ -188,7 +189,11 @@
       const cur = state.pages[state.currentPageIndex];
       if (!cur || !cur._apiId) return;
       clearTimeout(saveTimeout);
+      // show subtle saving indicator after 5s debounce
       saveTimeout = setTimeout(async () => {
+        const nbEl = document.querySelector('.notebook');
+        const loader =
+          window.MemoriumUtils && nbEl ? window.MemoriumUtils.showLoading(nbEl, 'Saving…') : null;
         try {
           // Get current content from DOM
           const area =
@@ -198,11 +203,48 @@
           await api.updatePage(cur._apiId, { content, theme: cur.theme });
           cur.content = content;
           showStatus('Saved to cloud', false);
+          if (window.MemoriumUtils && Date.now() - lastToast > 4000) {
+            window.MemoriumUtils.showToast('Autosaved', 'success');
+            lastToast = Date.now();
+          }
         } catch (e) {
           showStatus('Save failed, kept locally: ' + e.message, true);
+          if (window.MemoriumUtils) window.MemoriumUtils.showToast('Save failed', 'error');
+        } finally {
+          if (loader && window.MemoriumUtils) window.MemoriumUtils.hideLoading(nbEl);
         }
-      }, 600);
+      }, 5000);
     };
+    // Ctrl+S manual save
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        clearTimeout(saveTimeout);
+        window.savePage();
+        // force immediate save by triggering the timeout handler
+        setTimeout(() => {
+          const cur2 = nb.getState().pages[nb.getState().currentPageIndex];
+          if (!cur2 || !cur2._apiId) return;
+          const area =
+            document.querySelector(`.notebook-page[data-page="${cur2.id}"] .page-writing-area`) ||
+            document.querySelector('.page-writing-area');
+          const content = area ? area.innerHTML : cur2.content;
+          api
+            .updatePage(cur2._apiId, { content, theme: cur2.theme })
+            .then(() => {
+              showStatus('Saved', false);
+              if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved', 'success');
+            })
+            .catch(err => {
+              if (window.MemoriumUtils) window.MemoriumUtils.showToast(err.message, 'error');
+            });
+        }, 100);
+      }
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        const overlay = document.querySelector('.memorium-preview-overlay');
+        if (overlay) overlay.remove();
+      }
+    });
 
     // Override addDecoration to also POST
     window.addDecoration = function (type, opts = {}) {
