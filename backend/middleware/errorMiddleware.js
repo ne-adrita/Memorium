@@ -16,7 +16,7 @@ function errorMiddleware(err, req, res, _next) {
   // Mongoose validation
   if (err.name === 'ValidationError') {
     status = 400;
-    const details = Object.values(err.errors).map((e) => e.message);
+    const details = Object.values(err.errors).map(e => e.message);
     message = details.join(', ');
   }
 
@@ -35,7 +35,7 @@ function errorMiddleware(err, req, res, _next) {
   if (status === 500 && process.env.NODE_ENV === 'production') {
     // Allow known safe messages through (CORS)
     const safePatterns = ['Not allowed by CORS'];
-    const isSafe = safePatterns.some((p) => message.includes(p));
+    const isSafe = safePatterns.some(p => message.includes(p));
     if (!isSafe) {
       const isKnownSafe = err.statusCode && err.statusCode < 500;
       if (!isKnownSafe) message = 'Internal server error';

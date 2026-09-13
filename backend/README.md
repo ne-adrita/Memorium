@@ -20,6 +20,7 @@ MONGO_URI=mongodb+srv://<username>:<password>@<cluster>/<database>?retryWrites=t
 All models use Mongoose conventions, `ObjectId` references, `timestamps: true`, and validation.
 
 ### 1. User (`models/User.js`)
+
 - `name` String required 2-50
 - `email` String required unique, lowercase, trimmed, regex validated — **unique index**
 - `passwordHash` String required `select:false`
@@ -29,6 +30,7 @@ All models use Mongoose conventions, `ObjectId` references, `timestamps: true`, 
 - Virtual `journals` → Journal
 
 ### 2. Journal (`models/Journal.js`)
+
 - `owner` ObjectId → User required indexed
 - `title` String required max 120 default "My Journal"
 - `description` String max 500
@@ -38,6 +40,7 @@ All models use Mongoose conventions, `ObjectId` references, `timestamps: true`, 
 - Virtual `pages` → Page
 
 ### 3. Page (`models/Page.js`)
+
 - `journal` ObjectId → Journal required indexed
 - `pageNumber` Number required min 1 — **ordering field**, compound unique `{journal:1, pageNumber:1}`
 - `title` String max 200 (e.g., "Friday, February 14, 2026")
@@ -48,6 +51,7 @@ All models use Mongoose conventions, `ObjectId` references, `timestamps: true`, 
 - Virtual `decorations` → Decoration
 
 ### 4. Decoration (`models/Decoration.js`)
+
 - `page` ObjectId → Page required indexed
 - `type` enum `sticky|sticker|paper|flower|tape` required
 - `position` { `x` Number, `y` Number } min 0
@@ -59,9 +63,11 @@ All models use Mongoose conventions, `ObjectId` references, `timestamps: true`, 
 - Indexes: `{page:1}`, `{page:1, type:1}`
 
 ### 5. JournalEntry
+
 **Not created as separate model.** `Page.content` already stores entry body. `Page` is the entry. Creating a duplicate collection would violate “do not duplicate page content.” If richer entry metadata is needed later, `Page` can be extended.
 
 ### 6. Settings (`models/settingsModel.js`) — optional
+
 - `user` ObjectId → User unique
 - `theme` enum, `ambience` {grain,warmLight,soundEnabled,sound}
 - Reserved for persisting `memorium-ambience`/`memorium-theme` without blocking core flow.
@@ -85,12 +91,12 @@ All models use Mongoose conventions, `ObjectId` references, `timestamps: true`, 
 
 Current frontend stores everything in `localStorage` (offline-first):
 
-| Frontend key | Frontend shape | MongoDB target |
-|---|---|---|
-| `memorium-state-v2` | `{currentPageIndex, pages:[{id, title, theme, content, decorations:[{id,type,x,y,rot,text,emoji}]}], nextId}` | `Journal` + `Page` + `Decoration`. `pages[].id` (12,13) maps to `Page.pageNumber`; `pages[].content` (HTML) → `Page.content`; `pages[].theme` → `Page.theme`; `pages[].decorations[]` → `Decoration` docs per `Page` (`position:{x,y}`, `rotation:rot`, `text`/`emoji`/`config`) |
-| `memorium-theme` | `"parchment"` string | `Page.theme` per page (and `Settings.theme` global fallback) |
-| `memorium-ambience` | `{grain,warmLight,soundEnabled,sound}` | `Settings.ambience` (user-level) or stays local until user prefs API exists |
-| `memorium-page-*` legacy | per-page HTML | Migrated into `memorium-state-v2` then → `Page` |
+| Frontend key             | Frontend shape                                                                                                | MongoDB target                                                                                                                                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memorium-state-v2`      | `{currentPageIndex, pages:[{id, title, theme, content, decorations:[{id,type,x,y,rot,text,emoji}]}], nextId}` | `Journal` + `Page` + `Decoration`. `pages[].id` (12,13) maps to `Page.pageNumber`; `pages[].content` (HTML) → `Page.content`; `pages[].theme` → `Page.theme`; `pages[].decorations[]` → `Decoration` docs per `Page` (`position:{x,y}`, `rotation:rot`, `text`/`emoji`/`config`) |
+| `memorium-theme`         | `"parchment"` string                                                                                          | `Page.theme` per page (and `Settings.theme` global fallback)                                                                                                                                                                                                                     |
+| `memorium-ambience`      | `{grain,warmLight,soundEnabled,sound}`                                                                        | `Settings.ambience` (user-level) or stays local until user prefs API exists                                                                                                                                                                                                      |
+| `memorium-page-*` legacy | per-page HTML                                                                                                 | Migrated into `memorium-state-v2` then → `Page`                                                                                                                                                                                                                                  |
 
 `currentPageIndex` and `nextId` are UI state only; ordering is `Page.pageNumber` in DB.
 

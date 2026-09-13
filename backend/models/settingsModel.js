@@ -23,7 +23,11 @@ const settingsSchema = new mongoose.Schema(
       grain: { type: Boolean, default: true },
       warmLight: { type: Boolean, default: true },
       soundEnabled: { type: Boolean, default: false },
-      sound: { type: String, enum: ['rain', 'fireplace', 'birds', 'coffee', 'writing'], default: 'rain' },
+      sound: {
+        type: String,
+        enum: ['rain', 'fireplace', 'birds', 'coffee', 'writing'],
+        default: 'rain',
+      },
     },
   },
   { timestamps: true }

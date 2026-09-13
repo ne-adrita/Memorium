@@ -1,266 +1,348 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Memorium — Journal</title>
-    <meta name="title" content="Memorium — Your Personal Journal">
-    <meta name="description" content="Write and preserve your memories in Memorium, the living digital diary">
-    <meta name="keywords" content="digital journal, personal diary, memory keeper, journaling">
-    <meta name="author" content="Memorium">
-    <meta name="robots" content="index, follow">
-    <meta name="language" content="English">
+    <meta name="title" content="Memorium — Your Personal Journal" />
+    <meta
+      name="description"
+      content="Write and preserve your memories in Memorium, the living digital diary"
+    />
+    <meta name="keywords" content="digital journal, personal diary, memory keeper, journaling" />
+    <meta name="author" content="Memorium" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
 
     <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://memorium.app/journal">
-    <meta property="og:title" content="Memorium — Journal">
-    <meta property="og:description" content="Write and preserve your memories in Memorium">
-    <meta property="og:image" content="https://memorium.app/assets/images/og-image.jpg">
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://memorium.app/journal" />
+    <meta property="og:title" content="Memorium — Journal" />
+    <meta property="og:description" content="Write and preserve your memories in Memorium" />
+    <meta property="og:image" content="https://memorium.app/assets/images/og-image.jpg" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
 
     <!-- Theme Color -->
-    <meta name="theme-color" content="#4A3428">
-    <meta name="msapplication-TileColor" content="#4A3428">
+    <meta name="theme-color" content="#4A3428" />
+    <meta name="msapplication-TileColor" content="#4A3428" />
 
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Caveat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Caveat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/variables.css">
-    <link rel="stylesheet" href="css/reset.css">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/animation.css">
-    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/reset.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/animation.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
 
     <!-- Notebook Component CSS -->
-    <link rel="stylesheet" href="components/notebook/notebook.css">
-    <link rel="stylesheet" href="css/themes.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="components/notebook/notebook.css" />
+    <link rel="stylesheet" href="css/themes.css" />
+  </head>
+  <body>
     <!-- ============================================================
          NAVBAR
          ============================================================ -->
     <header class="navbar" id="navbar" role="banner">
-        <nav class="nav-container" aria-label="Main navigation">
-            
-            <!-- Brand Logo -->
-            <a href="index.html" class="nav-brand" aria-label="Memorium Home">
-                <span class="nav-brand-icon">📖</span>
-                Memor<span>ium</span>
-            </a>
-            
-            <!-- Navigation Links -->
-            <ul class="nav-links" role="list">
-                <li><a href="index.html" class="nav-link active">Home</a></li>
-                <li><a href="bookshelf.html" class="nav-link">My Journals</a></li>
-                <li><a href="journal.html" class="nav-link">Journal</a></li>
-                <li><a href="login.html" class="btn btn-outline">Sign In</a></li>
-            </ul>
-            
-            <!-- Mobile Toggle -->
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </nav>
+      <nav class="nav-container" aria-label="Main navigation">
+        <!-- Brand Logo -->
+        <a href="index.html" class="nav-brand" aria-label="Memorium Home">
+          <span class="nav-brand-icon">📖</span>
+          Memor<span>ium</span>
+        </a>
+
+        <!-- Navigation Links -->
+        <ul class="nav-links" role="list">
+          <li><a href="index.html" class="nav-link active">Home</a></li>
+          <li><a href="bookshelf.html" class="nav-link">My Journals</a></li>
+          <li><a href="journal.html" class="nav-link">Journal</a></li>
+          <li><a href="login.html" class="btn btn-outline">Sign In</a></li>
+        </ul>
+
+        <!-- Mobile Toggle -->
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          aria-label="Toggle navigation menu"
+          aria-expanded="false"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
     </header>
 
     <!-- ============================================================
          MAIN CONTENT
          ============================================================ -->
     <main>
-        
-        <!-- ============================================================
+      <!-- ============================================================
              JOURNAL HERO
              ============================================================ -->
-        <section class="hero" id="journal-hero" style="padding-top: calc(var(--navbar-height) + 2rem);">
-            <div class="hero-container">
-                
-                <!-- Journal Text Content -->
-                <div class="hero-content">
-                    <div class="hero-badge">
-                        ✨ A Living Journal Experience
-                    </div>
-                    
-                    <h1 class="hero-title">
-                        Your story,<br>
-                        preserved.
-                    </h1>
-                    
-                    <p class="hero-description">
-                        Open a new page and write the moments that matter. 
-                        Your journal grows with you, aging beautifully through time.
-                    </p>
-                    
-                    <div class="hero-buttons">
-                        <a href="#notebook-section" class="btn btn-gold btn-lg">
-                            ✍️ New Entry
-                        </a>
-                        <a href="bookshelf.html" class="btn btn-outline btn-lg">
-                            View Library ↓
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Journal Visual -->
-                <div class="hero-visual" aria-hidden="true">
-                    <div class="desk-scene">
-                        <!-- Desk Surface -->
-                        <div class="desk-surface"></div>
-                        
-                        <!-- Open Notebook -->
-                        <div class="hero-notebook">
-                            <div class="notebook-shine"></div>
-                        </div>
-                        
-                        <!-- Candle -->
-                        <div class="hero-candle">
-                            <div class="candle-body"></div>
-                            <div class="flame"></div>
-                            <div class="flame-glow"></div>
-                        </div>
-                        
-                        <!-- Flower -->
-                        <div class="hero-flower">🌸</div>
-                    </div>
-                </div>
-                
-            </div>
-        </section>
+      <section
+        class="hero"
+        id="journal-hero"
+        style="padding-top: calc(var(--navbar-height) + 2rem)"
+      >
+        <div class="hero-container">
+          <!-- Journal Text Content -->
+          <div class="hero-content">
+            <div class="hero-badge">✨ A Living Journal Experience</div>
 
-        <!-- ============================================================
+            <h1 class="hero-title">
+              Your story,<br />
+              preserved.
+            </h1>
+
+            <p class="hero-description">
+              Open a new page and write the moments that matter. Your journal grows with you, aging
+              beautifully through time.
+            </p>
+
+            <div class="hero-buttons">
+              <a href="#notebook-section" class="btn btn-gold btn-lg"> ✍️ New Entry </a>
+              <a href="bookshelf.html" class="btn btn-outline btn-lg"> View Library ↓ </a>
+            </div>
+          </div>
+
+          <!-- Journal Visual -->
+          <div class="hero-visual" aria-hidden="true">
+            <div class="desk-scene">
+              <!-- Desk Surface -->
+              <div class="desk-surface"></div>
+
+              <!-- Open Notebook -->
+              <div class="hero-notebook">
+                <div class="notebook-shine"></div>
+              </div>
+
+              <!-- Candle -->
+              <div class="hero-candle">
+                <div class="candle-body"></div>
+                <div class="flame"></div>
+                <div class="flame-glow"></div>
+              </div>
+
+              <!-- Flower -->
+              <div class="hero-flower">🌸</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
              INTERACTIVE NOTEBOOK — Living Journal
              ============================================================ -->
-        <section class="section" id="notebook-section" style="background: #3D2E26; padding: 3rem 1rem; overflow-x: auto;">
-            <header class="section-heading" style="text-align:center; margin-bottom:1.5rem;">
-                <span class="section-subtitle" style="color: #E0C350;">Your Living Notebook</span>
-                <h2 class="section-title" style="color:#F8F1E7;">Write, decorate, remember</h2>
-                <p class="section-description" style="color: rgba(248,241,231,.7);">Tip: click to write, double-click canvas for sticky note, drag decorations.</p>
-            </header>
-            <div style="display:flex; justify-content:center; min-width: 320px;">
-            <!-- Notebook injected here -->
-            <div class="notebook" data-theme="parchment" data-state="open" style="width:1100px; max-width:95vw;">
-                <div class="notebook-cover"><div class="notebook-cover-edge notebook-cover-edge--top"></div><div class="notebook-cover-edge notebook-cover-edge--bottom"></div><div class="notebook-cover-edge notebook-cover-edge--left"></div><div class="notebook-cover-edge notebook-cover-edge--right"></div><div class="notebook-cover-corner notebook-cover-corner--tl"></div><div class="notebook-cover-corner notebook-cover-corner--tr"></div><div class="notebook-cover-corner notebook-cover-corner--bl"></div><div class="notebook-cover-corner notebook-cover-corner--br"></div></div>
-                <div class="notebook-bookmark" aria-hidden="true"><div class="notebook-bookmark-ribbon"></div></div>
-                <div class="notebook-page notebook-page--left" data-page="12" data-theme="parchment">
-                    <div class="notebook-page-shadow notebook-page-shadow--left"></div>
-                    <div class="notebook-page-content">
-                        <header class="page-header"><div class="page-meta"><span class="page-date-icon">📅</span><time class="page-date" datetime="2026-02-14">Friday, February 14, 2026</time></div><div class="page-indicators"><span class="page-weather" title="Sunny">☀️</span><span class="page-mood" title="Happy">😊</span></div></header>
-                        <hr class="page-divider" aria-hidden="true">
-                        <div class="page-body"><div class="page-writing-area" contenteditable="true" aria-label="Journal entry" role="textbox" aria-multiline="true" data-placeholder="Dear Diary..."><p class="page-paragraph"><span class="page-first-letter">T</span>oday was one of those quiet, rainy days that make you want to curl up with a warm cup of coffee and just... write.</p><p class="page-paragraph">The sound of raindrops against the window, the soft glow of the candle on my desk — it all feels so peaceful. I've been thinking a lot about memories lately. How they fade. How they change.</p><p class="page-paragraph">Some moments stay with us forever while others slip away like morning mist. That's why I started this journal.</p></div></div>
-                        <footer class="page-footer"><span class="page-number">12</span></footer>
-                    </div>
-                    <div class="page-decoration-layer" aria-hidden="true" style="position:absolute; inset:0; pointer-events:none;"></div>
-                </div>
-                <div class="notebook-spine" aria-hidden="true"><div class="notebook-spine-line"></div><div class="notebook-spine-shadow"></div></div>
-                <div class="notebook-page notebook-page--right" data-page="13" data-theme="parchment">
-                    <div class="notebook-page-shadow notebook-page-shadow--right"></div>
-                    <div class="notebook-page-content">
-                        <header class="page-header"><div class="page-meta"><span class="page-date-icon">📅</span><time class="page-date" datetime="2026-02-14">Friday, February 14, 2026</time></div></header>
-                        <hr class="page-divider" aria-hidden="true">
-                        <div class="page-body"><div class="page-decoration-area" data-state="empty"><div class="page-empty-state"><span class="page-empty-icon">🎨</span><p class="page-empty-text">Your canvas awaits.<br>Drag photos, stickers, and memories here.</p></div></div></div>
-                        <footer class="page-footer"><span class="page-number">13</span></footer>
-                    </div>
-                    <div class="page-decoration-layer" aria-hidden="true" style="position:absolute; inset:0; pointer-events:none;"></div>
-                </div>
-                <div class="notebook-nav-hint notebook-nav-hint--prev" aria-hidden="true"><span>◀</span></div>
-                <div class="notebook-nav-hint notebook-nav-hint--next" aria-hidden="true"><span>▶</span></div>
+      <section
+        class="section"
+        id="notebook-section"
+        style="background: #3d2e26; padding: 3rem 1rem; overflow-x: auto"
+      >
+        <header class="section-heading" style="text-align: center; margin-bottom: 1.5rem">
+          <span class="section-subtitle" style="color: #e0c350">Your Living Notebook</span>
+          <h2 class="section-title" style="color: #f8f1e7">Write, decorate, remember</h2>
+          <p class="section-description" style="color: rgba(248, 241, 231, 0.7)">
+            Tip: click to write, double-click canvas for sticky note, drag decorations.
+          </p>
+        </header>
+        <div style="display: flex; justify-content: center; min-width: 320px">
+          <!-- Notebook injected here -->
+          <div
+            class="notebook"
+            data-theme="parchment"
+            data-state="open"
+            style="width: 1100px; max-width: 95vw"
+          >
+            <div class="notebook-cover">
+              <div class="notebook-cover-edge notebook-cover-edge--top"></div>
+              <div class="notebook-cover-edge notebook-cover-edge--bottom"></div>
+              <div class="notebook-cover-edge notebook-cover-edge--left"></div>
+              <div class="notebook-cover-edge notebook-cover-edge--right"></div>
+              <div class="notebook-cover-corner notebook-cover-corner--tl"></div>
+              <div class="notebook-cover-corner notebook-cover-corner--tr"></div>
+              <div class="notebook-cover-corner notebook-cover-corner--bl"></div>
+              <div class="notebook-cover-corner notebook-cover-corner--br"></div>
             </div>
+            <div class="notebook-bookmark" aria-hidden="true">
+              <div class="notebook-bookmark-ribbon"></div>
             </div>
-        </section>
+            <div class="notebook-page notebook-page--left" data-page="12" data-theme="parchment">
+              <div class="notebook-page-shadow notebook-page-shadow--left"></div>
+              <div class="notebook-page-content">
+                <header class="page-header">
+                  <div class="page-meta">
+                    <span class="page-date-icon">📅</span
+                    ><time class="page-date" datetime="2026-02-14">Friday, February 14, 2026</time>
+                  </div>
+                  <div class="page-indicators">
+                    <span class="page-weather" title="Sunny">☀️</span
+                    ><span class="page-mood" title="Happy">😊</span>
+                  </div>
+                </header>
+                <hr class="page-divider" aria-hidden="true" />
+                <div class="page-body">
+                  <div
+                    class="page-writing-area"
+                    contenteditable="true"
+                    aria-label="Journal entry"
+                    role="textbox"
+                    aria-multiline="true"
+                    data-placeholder="Dear Diary..."
+                  >
+                    <p class="page-paragraph">
+                      <span class="page-first-letter">T</span>oday was one of those quiet, rainy
+                      days that make you want to curl up with a warm cup of coffee and just...
+                      write.
+                    </p>
+                    <p class="page-paragraph">
+                      The sound of raindrops against the window, the soft glow of the candle on my
+                      desk — it all feels so peaceful. I've been thinking a lot about memories
+                      lately. How they fade. How they change.
+                    </p>
+                    <p class="page-paragraph">
+                      Some moments stay with us forever while others slip away like morning mist.
+                      That's why I started this journal.
+                    </p>
+                  </div>
+                </div>
+                <footer class="page-footer"><span class="page-number">12</span></footer>
+              </div>
+              <div
+                class="page-decoration-layer"
+                aria-hidden="true"
+                style="position: absolute; inset: 0; pointer-events: none"
+              ></div>
+            </div>
+            <div class="notebook-spine" aria-hidden="true">
+              <div class="notebook-spine-line"></div>
+              <div class="notebook-spine-shadow"></div>
+            </div>
+            <div class="notebook-page notebook-page--right" data-page="13" data-theme="parchment">
+              <div class="notebook-page-shadow notebook-page-shadow--right"></div>
+              <div class="notebook-page-content">
+                <header class="page-header">
+                  <div class="page-meta">
+                    <span class="page-date-icon">📅</span
+                    ><time class="page-date" datetime="2026-02-14">Friday, February 14, 2026</time>
+                  </div>
+                </header>
+                <hr class="page-divider" aria-hidden="true" />
+                <div class="page-body">
+                  <div class="page-decoration-area" data-state="empty">
+                    <div class="page-empty-state">
+                      <span class="page-empty-icon">🎨</span>
+                      <p class="page-empty-text">
+                        Your canvas awaits.<br />Drag photos, stickers, and memories here.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <footer class="page-footer"><span class="page-number">13</span></footer>
+              </div>
+              <div
+                class="page-decoration-layer"
+                aria-hidden="true"
+                style="position: absolute; inset: 0; pointer-events: none"
+              ></div>
+            </div>
+            <div class="notebook-nav-hint notebook-nav-hint--prev" aria-hidden="true">
+              <span>◀</span>
+            </div>
+            <div class="notebook-nav-hint notebook-nav-hint--next" aria-hidden="true">
+              <span>▶</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <!-- ============================================================
+      <!-- ============================================================
              JOURNAL ENTRIES
              ============================================================ -->
-        <section class="section" id="entries">
-            <div class="container">
-                <header class="section-heading">
-                    <span class="section-subtitle">Your Entries</span>
-                    <h2 class="section-title">Journal Entries</h2>
-                    <p class="section-description">Memories that age with you</p>
-                </header>
-                
-                <div class="grid grid--auto">
-                    
-                    <!-- Entry 1 -->
-                    <article class="card" style="aspect-ratio: 2/3;">
-                        <div class="card-header">
-                            <span class="card-meta">Friday, February 14, 2026</span>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                <span class="first-letter">T</span>oday felt like the kind of day 
-                                that deserved to be remembered. The kind where time seems 
-                                to slow down and every moment feels precious.
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <span class="card-date">12</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Entry 2 -->
-                    <article class="card" style="aspect-ratio: 2/3;">
-                        <div class="card-header">
-                            <span class="card-meta">Tuesday, February 7, 2026</span>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                <span class="first-letter">S</span>ometimes the smallest 
-                                moments make the biggest impact. A quiet coffee in the 
-                                morning, a walk without a destination.
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <span class="card-date">11</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Entry 3 -->
-                    <article class="card" style="aspect-ratio: 2/3;">
-                        <div class="card-header">
-                            <span class="card-meta">Sunday, January 29, 2026</span>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                <span class="first-letter">R</span>ain against the window, 
-                                a candle burning low, and the quiet realization that 
-                                these are the days we'll look back on someday.
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <span class="card-date">10</span>
-                        </div>
-                    </article>
-                    
-                </div>
-                
-                <div class="flex--center section-footer">
-                    <a href="#journal-hero" class="btn btn-outline">← Back to Top</a>
-                </div>
-                
-            </div>
-        </section>
+      <section class="section" id="entries">
+        <div class="container">
+          <header class="section-heading">
+            <span class="section-subtitle">Your Entries</span>
+            <h2 class="section-title">Journal Entries</h2>
+            <p class="section-description">Memories that age with you</p>
+          </header>
 
+          <div class="grid grid--auto">
+            <!-- Entry 1 -->
+            <article class="card" style="aspect-ratio: 2/3">
+              <div class="card-header">
+                <span class="card-meta">Friday, February 14, 2026</span>
+              </div>
+              <div class="card-body">
+                <p class="card-text">
+                  <span class="first-letter">T</span>oday felt like the kind of day that deserved to
+                  be remembered. The kind where time seems to slow down and every moment feels
+                  precious.
+                </p>
+              </div>
+              <div class="card-footer">
+                <span class="card-date">12</span>
+              </div>
+            </article>
+
+            <!-- Entry 2 -->
+            <article class="card" style="aspect-ratio: 2/3">
+              <div class="card-header">
+                <span class="card-meta">Tuesday, February 7, 2026</span>
+              </div>
+              <div class="card-body">
+                <p class="card-text">
+                  <span class="first-letter">S</span>ometimes the smallest moments make the biggest
+                  impact. A quiet coffee in the morning, a walk without a destination.
+                </p>
+              </div>
+              <div class="card-footer">
+                <span class="card-date">11</span>
+              </div>
+            </article>
+
+            <!-- Entry 3 -->
+            <article class="card" style="aspect-ratio: 2/3">
+              <div class="card-header">
+                <span class="card-meta">Sunday, January 29, 2026</span>
+              </div>
+              <div class="card-body">
+                <p class="card-text">
+                  <span class="first-letter">R</span>ain against the window, a candle burning low,
+                  and the quiet realization that these are the days we'll look back on someday.
+                </p>
+              </div>
+              <div class="card-footer">
+                <span class="card-date">10</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="flex--center section-footer">
+            <a href="#journal-hero" class="btn btn-outline">← Back to Top</a>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- ============================================================
          FOOTER
          ============================================================ -->
     <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2026 Memorium. Crafted for memory keepers.</p>
-            <p class="footer-quote">"Some memories should grow old with you."</p>
-        </div>
+      <div class="footer-content">
+        <p>&copy; 2026 Memorium. Crafted for memory keepers.</p>
+        <p class="footer-quote">"Some memories should grow old with you."</p>
+      </div>
     </footer>
 
     <!-- ============================================================
@@ -274,53 +356,52 @@
     <script src="components/notebook/notebook.js"></script>
     <script src="js/journal.js"></script>
     <script src="js/app.js"></script>
-    
-    <script>
-        // Inline critical JS for immediate interactivity
-        (function() {
-            // Navbar scroll effect
-            const navbar = document.getElementById('navbar');
-            window.addEventListener('scroll', function() {
-                if (window.scrollY > 50) {
-                    navbar.classList.add('scrolled');
-                } else {
-                    navbar.classList.remove('scrolled');
-                }
-            });
-            
-            // Mobile nav toggle
-            const toggle = document.getElementById('navToggle');
-            const navLinks = document.querySelector('.nav-links');
-            let menuOpen = false;
-            
-            toggle.addEventListener('click', function() {
-                menuOpen = !menuOpen;
-                toggle.setAttribute('aria-expanded', menuOpen);
-                // Full mobile menu functionality in app.js
-            });
-            
-            // Active nav link on scroll
-            const sections = document.querySelectorAll('section[id]');
-            const navItems = document.querySelectorAll('.nav-link');
-            
-            window.addEventListener('scroll', function() {
-                let current = '';
-                sections.forEach(function(section) {
-                    const sectionTop = section.offsetTop - 100;
-                    if (window.scrollY >= sectionTop) {
-                        current = section.getAttribute('id');
-                    }
-                });
-                
-                navItems.forEach(function(link) {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === '#' + current) {
-                        link.classList.add('active');
-                    }
-                });
-            });
-        })();
-    </script>
 
-</body>
+    <script>
+      // Inline critical JS for immediate interactivity
+      (function () {
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', function () {
+          if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+          } else {
+            navbar.classList.remove('scrolled');
+          }
+        });
+
+        // Mobile nav toggle
+        const toggle = document.getElementById('navToggle');
+        const navLinks = document.querySelector('.nav-links');
+        let menuOpen = false;
+
+        toggle.addEventListener('click', function () {
+          menuOpen = !menuOpen;
+          toggle.setAttribute('aria-expanded', menuOpen);
+          // Full mobile menu functionality in app.js
+        });
+
+        // Active nav link on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const navItems = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', function () {
+          let current = '';
+          sections.forEach(function (section) {
+            const sectionTop = section.offsetTop - 100;
+            if (window.scrollY >= sectionTop) {
+              current = section.getAttribute('id');
+            }
+          });
+
+          navItems.forEach(function (link) {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+              link.classList.add('active');
+            }
+          });
+        });
+      })();
+    </script>
+  </body>
 </html>

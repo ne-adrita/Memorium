@@ -7,34 +7,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Caveat:wght@400;600;700&display=swap');
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-    font-family: 'Lora', serif;
-    background: #3D2E26;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 2rem;
-    
-    /* Subtle wall texture */
-    background-image: 
-        repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 2px,
-            rgba(0, 0, 0, 0.03) 2px,
-            rgba(0, 0, 0, 0.03) 4px
-        ),
-        radial-gradient(
-            ellipse at 50% 30%,
-            rgba(255, 200, 140, 0.05) 0%,
-            transparent 60%
-        );
+  font-family: 'Lora', serif;
+  background: #3d2e26;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+
+  /* Subtle wall texture */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    ),
+    radial-gradient(ellipse at 50% 30%, rgba(255, 200, 140, 0.05) 0%, transparent 60%);
 }
 
 /* ==========================================
@@ -42,63 +38,58 @@ body {
    ========================================== */
 
 .desk {
-    width: 100%;
-    max-width: 1300px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    
-    /* Desk surface */
-    padding: 3rem;
-    background: linear-gradient(
-        180deg,
-        #6B4F3B 0%,
-        #5A3F2E 30%,
-        #4A3428 100%
-    );
-    border-radius: 8px;
-    box-shadow: 
-        0 4px 0 #3D2A1E,
-        0 8px 30px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 1300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+
+  /* Desk surface */
+  padding: 3rem;
+  background: linear-gradient(180deg, #6b4f3b 0%, #5a3f2e 30%, #4a3428 100%);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 0 #3d2a1e,
+    0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
 /* Wood grain texture */
 .desk::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: 
-        repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 30px,
-            rgba(0, 0, 0, 0.03) 30px,
-            rgba(0, 0, 0, 0.03) 32px
-        ),
-        repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 100px,
-            rgba(255, 255, 255, 0.015) 100px,
-            rgba(255, 255, 255, 0.015) 102px
-        );
-    pointer-events: none;
-    z-index: 0;
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 30px,
+      rgba(0, 0, 0, 0.03) 30px,
+      rgba(0, 0, 0, 0.03) 32px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 100px,
+      rgba(255, 255, 255, 0.015) 100px,
+      rgba(255, 255, 255, 0.015) 102px
+    );
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Desk edge highlight */
 .desk::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 8px 8px 0 0;
-    pointer-events: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px 8px 0 0;
+  pointer-events: none;
 }
 
 /* ==========================================
@@ -106,65 +97,59 @@ body {
    ========================================== */
 
 .notebook {
-    position: relative;
-    z-index: 1;
-    width: 1100px;
-    height: 700px;
-    display: flex;
-    border-radius: 8px 16px 16px 8px;
-    overflow: visible;
-    
-    /* Outer leather cover */
-    background: #5C3D2E;
-    padding: 12px 12px 12px 16px;
-    
-    box-shadow: 
+  position: relative;
+  z-index: 1;
+  width: 1100px;
+  height: 700px;
+  display: flex;
+  border-radius: 8px 16px 16px 8px;
+  overflow: visible;
+
+  /* Outer leather cover */
+  background: #5c3d2e;
+  padding: 12px 12px 12px 16px;
+
+  box-shadow: 
         /* Deep shadow under book */
-        0 20px 50px rgba(0, 0, 0, 0.5),
-        0 5px 15px rgba(0, 0, 0, 0.3),
-        /* Leather edge highlight */
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        /* Right side shadow (book thickness) */
-        8px 0 0 #4A2E20;
+    0 20px 50px rgba(0, 0, 0, 0.5),
+    0 5px 15px rgba(0, 0, 0, 0.3),
+    /* Leather edge highlight */ inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    /* Right side shadow (book thickness) */ 8px 0 0 #4a2e20;
 }
 
 /* Leather texture overlay */
 .notebook::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: 
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: 
         /* Diagonal leather grain */
-        repeating-linear-gradient(
-            45deg,
-            transparent,
-            transparent 4px,
-            rgba(0, 0, 0, 0.04) 4px,
-            rgba(0, 0, 0, 0.04) 5px
-        ),
-        /* Subtle shine */
-        radial-gradient(
-            ellipse at 30% 20%,
-            rgba(255, 255, 255, 0.06) 0%,
-            transparent 50%
-        );
-    pointer-events: none;
-    z-index: 0;
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(0, 0, 0, 0.04) 4px,
+      rgba(0, 0, 0, 0.04) 5px
+    ),
+    /* Subtle shine */
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Gold corner accents */
 .notebook::after {
-    content: '';
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    left: 12px;
-    border: 1px solid rgba(201, 162, 39, 0.2);
-    border-radius: 6px 12px 12px 6px;
-    pointer-events: none;
-    z-index: 0;
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  left: 12px;
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  border-radius: 6px 12px 12px 6px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ==========================================
@@ -172,60 +157,59 @@ body {
    ========================================== */
 
 .book-spine {
-    width: 35px;
-    flex-shrink: 0;
-    position: relative;
-    z-index: 2;
-    
-    /* Leather spine with depth */
-    background: linear-gradient(
-        to right,
-        #2A1810 0%,
-        #3C2418 20%,
-        #6B4B35 40%,
-        #4A3020 60%,
-        #3C2418 80%,
-        #2A1810 100%
-    );
-    
-    /* Spine texture */
-    background-image: 
-        repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 3px,
-            rgba(0, 0, 0, 0.06) 3px,
-            rgba(0, 0, 0, 0.06) 4px
-        );
-    
-    border-radius: 4px 0 0 4px;
-    
-    /* Spine shadow creating fold effect */
-    box-shadow: 
-        inset 2px 0 8px rgba(0, 0, 0, 0.4),
-        inset -2px 0 4px rgba(0, 0, 0, 0.2),
-        2px 0 8px rgba(0, 0, 0, 0.3);
+  width: 35px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+
+  /* Leather spine with depth */
+  background: linear-gradient(
+    to right,
+    #2a1810 0%,
+    #3c2418 20%,
+    #6b4b35 40%,
+    #4a3020 60%,
+    #3c2418 80%,
+    #2a1810 100%
+  );
+
+  /* Spine texture */
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.06) 3px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+
+  border-radius: 4px 0 0 4px;
+
+  /* Spine shadow creating fold effect */
+  box-shadow:
+    inset 2px 0 8px rgba(0, 0, 0, 0.4),
+    inset -2px 0 4px rgba(0, 0, 0, 0.2),
+    2px 0 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Spine horizontal bands (like real book binding) */
 .book-spine::before {
-    content: '';
-    position: absolute;
-    top: 15%;
-    left: 6px;
-    right: 6px;
-    height: 1px;
-    background: rgba(201, 162, 39, 0.2);
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 6px;
+  right: 6px;
+  height: 1px;
+  background: rgba(201, 162, 39, 0.2);
 }
 
 .book-spine::after {
-    content: '';
-    position: absolute;
-    bottom: 15%;
-    left: 6px;
-    right: 6px;
-    height: 1px;
-    background: rgba(201, 162, 39, 0.2);
+  content: '';
+  position: absolute;
+  bottom: 15%;
+  left: 6px;
+  right: 6px;
+  height: 1px;
+  background: rgba(201, 162, 39, 0.2);
 }
 
 /* ==========================================
@@ -233,39 +217,35 @@ body {
    ========================================== */
 
 .page {
-    flex: 1;
-    position: relative;
-    z-index: 1;
-    padding: 45px 40px;
-    
-    /* Paper background */
-    background: #F8F2E7;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  padding: 45px 40px;
+
+  /* Paper background */
+  background: #f8f2e7;
 }
 
 /* Old paper texture */
 .page::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    
-    /* Subtle paper fiber texture */
-    background-image: 
-        repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 27px,
-            rgba(107, 79, 59, 0.04) 27px,
-            rgba(107, 79, 59, 0.04) 28px
-        ),
-        /* Slight yellowing at edges */
-        radial-gradient(
-            ellipse at 50% 50%,
-            transparent 60%,
-            rgba(210, 180, 140, 0.15) 100%
-        );
-    border-radius: inherit;
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  /* Subtle paper fiber texture */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      rgba(107, 79, 59, 0.04) 27px,
+      rgba(107, 79, 59, 0.04) 28px
+    ),
+    /* Slight yellowing at edges */
+    radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(210, 180, 140, 0.15) 100%);
+  border-radius: inherit;
 }
 
 /* ==========================================
@@ -273,33 +253,33 @@ body {
    ========================================== */
 
 .left-page {
-    border-radius: 0 8px 8px 0;
-    
-    /* Fold shadow on the right side */
-    box-shadow: 
-        inset -12px 0 15px -10px rgba(0, 0, 0, 0.12),
-        -3px 0 5px rgba(0, 0, 0, 0.04);
-    
-    /* Slightly curved page edge */
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 0 8px 8px 0;
+
+  /* Fold shadow on the right side */
+  box-shadow:
+    inset -12px 0 15px -10px rgba(0, 0, 0, 0.12),
+    -3px 0 5px rgba(0, 0, 0, 0.04);
+
+  /* Slightly curved page edge */
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 /* Left page inner fold gradient */
 .left-page::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 30px;
-    background: linear-gradient(
-        to right,
-        transparent,
-        rgba(0, 0, 0, 0.04) 50%,
-        rgba(0, 0, 0, 0.06) 100%
-    );
-    pointer-events: none;
-    border-radius: 0 8px 8px 0;
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 0, 0, 0.04) 50%,
+    rgba(0, 0, 0, 0.06) 100%
+  );
+  pointer-events: none;
+  border-radius: 0 8px 8px 0;
 }
 
 /* ==========================================
@@ -307,33 +287,33 @@ body {
    ========================================== */
 
 .right-page {
-    border-radius: 8px 0 0 8px;
-    
-    /* Fold shadow on the left side */
-    box-shadow: 
-        inset 12px 0 15px -10px rgba(0, 0, 0, 0.12),
-        3px 0 5px rgba(0, 0, 0, 0.04);
-    
-    /* Slightly curved page edge */
-    border-left: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 8px 0 0 8px;
+
+  /* Fold shadow on the left side */
+  box-shadow:
+    inset 12px 0 15px -10px rgba(0, 0, 0, 0.12),
+    3px 0 5px rgba(0, 0, 0, 0.04);
+
+  /* Slightly curved page edge */
+  border-left: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 /* Right page inner fold gradient */
 .right-page::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 30px;
-    background: linear-gradient(
-        to left,
-        transparent,
-        rgba(0, 0, 0, 0.04) 50%,
-        rgba(0, 0, 0, 0.06) 100%
-    );
-    pointer-events: none;
-    border-radius: 8px 0 0 8px;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  background: linear-gradient(
+    to left,
+    transparent,
+    rgba(0, 0, 0, 0.04) 50%,
+    rgba(0, 0, 0, 0.06) 100%
+  );
+  pointer-events: none;
+  border-radius: 8px 0 0 8px;
 }
 
 /* ==========================================
@@ -341,40 +321,36 @@ body {
    ========================================== */
 
 .page-header {
-    position: relative;
-    z-index: 1;
-    margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 10px;
 }
 
 .page-header p {
-    color: #8B7B6B;
-    font-size: 13px;
-    margin-bottom: 6px;
-    font-style: italic;
-    letter-spacing: 0.5px;
+  color: #8b7b6b;
+  font-size: 13px;
+  margin-bottom: 6px;
+  font-style: italic;
+  letter-spacing: 0.5px;
 }
 
 .page-header h2,
 .page-header h3 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 32px;
-    font-weight: 600;
-    color: #3B2C23;
-    position: relative;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: #3b2c23;
+  position: relative;
 }
 
 /* Decorative underline */
 .page-header h2::after {
-    content: '';
-    display: block;
-    width: 60px;
-    height: 2px;
-    background: linear-gradient(
-        to right,
-        #C9A227,
-        transparent
-    );
-    margin-top: 8px;
+  content: '';
+  display: block;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(to right, #c9a227, transparent);
+  margin-top: 8px;
 }
 
 /* ==========================================
@@ -382,33 +358,33 @@ body {
    ========================================== */
 
 .page-content {
-    position: relative;
-    z-index: 1;
-    margin-top: 35px;
-    line-height: 2;
-    color: #3C312B;
-    font-size: 17px;
+  position: relative;
+  z-index: 1;
+  margin-top: 35px;
+  line-height: 2;
+  color: #3c312b;
+  font-size: 17px;
 }
 
 .page-content p {
-    margin-bottom: 1.2em;
-    text-indent: 1.5em;
+  margin-bottom: 1.2em;
+  text-indent: 1.5em;
 }
 
 .page-content p:first-child {
-    text-indent: 0;
+  text-indent: 0;
 }
 
 /* First letter drop cap effect */
 .page-content p:first-child::first-letter {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 3.5em;
-    float: left;
-    line-height: 0.8;
-    padding-right: 8px;
-    padding-top: 4px;
-    color: #5C3D2E;
-    font-weight: 700;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3.5em;
+  float: left;
+  line-height: 0.8;
+  padding-right: 8px;
+  padding-top: 4px;
+  color: #5c3d2e;
+  font-weight: 700;
 }
 
 /* ==========================================
@@ -416,61 +392,61 @@ body {
    ========================================== */
 
 .photo-placeholder {
-    width: 220px;
-    height: 160px;
-    border: 2px dashed #C4A882;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 30px;
-    background: #FFFAF1;
-    border-radius: 4px;
-    position: relative;
-    z-index: 1;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    
-    /* Paper clip effect */
-    box-shadow: 
-        2px 3px 8px rgba(0, 0, 0, 0.08),
-        inset 0 0 0 3px #FFFAF1,
-        inset 0 0 0 5px rgba(196, 168, 130, 0.2);
+  width: 220px;
+  height: 160px;
+  border: 2px dashed #c4a882;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  background: #fffaf1;
+  border-radius: 4px;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+  cursor: pointer;
+
+  /* Paper clip effect */
+  box-shadow:
+    2px 3px 8px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 3px #fffaf1,
+    inset 0 0 0 5px rgba(196, 168, 130, 0.2);
 }
 
 .photo-placeholder:hover {
-    border-color: #A67B5B;
-    box-shadow: 
-        3px 5px 12px rgba(0, 0, 0, 0.12),
-        inset 0 0 0 3px #FFFAF1,
-        inset 0 0 0 5px rgba(166, 123, 91, 0.2);
-    transform: translateY(-2px);
+  border-color: #a67b5b;
+  box-shadow:
+    3px 5px 12px rgba(0, 0, 0, 0.12),
+    inset 0 0 0 3px #fffaf1,
+    inset 0 0 0 5px rgba(166, 123, 91, 0.2);
+  transform: translateY(-2px);
 }
 
 /* Photo corner mounts */
 .photo-placeholder::before {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: 10px;
-    width: 20px;
-    height: 20px;
-    background: #D4C0A0;
-    border-radius: 2px;
-    transform: rotate(45deg);
-    z-index: 2;
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  background: #d4c0a0;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  z-index: 2;
 }
 
 .photo-placeholder::after {
-    content: '';
-    position: absolute;
-    top: -4px;
-    right: 10px;
-    width: 20px;
-    height: 20px;
-    background: #D4C0A0;
-    border-radius: 2px;
-    transform: rotate(45deg);
-    z-index: 2;
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  background: #d4c0a0;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  z-index: 2;
 }
 
 /* ==========================================
@@ -478,51 +454,47 @@ body {
    ========================================== */
 
 .note {
-    width: 230px;
-    background: linear-gradient(
-        135deg,
-        #FFF9C4 0%,
-        #FFF4A8 100%
-    );
-    padding: 20px 18px;
-    transform: rotate(-2.5deg);
-    position: relative;
-    z-index: 1;
-    
-    /* Shadow for lifted effect */
-    box-shadow: 
-        3px 5px 15px rgba(0, 0, 0, 0.12),
-        1px 2px 4px rgba(0, 0, 0, 0.08);
-    
-    font-family: 'Caveat', cursive;
-    font-size: 22px;
-    color: #4A3528;
-    line-height: 1.6;
-    
-    border-radius: 2px 8px 2px 8px;
-    
-    transition: all 0.3s ease;
+  width: 230px;
+  background: linear-gradient(135deg, #fff9c4 0%, #fff4a8 100%);
+  padding: 20px 18px;
+  transform: rotate(-2.5deg);
+  position: relative;
+  z-index: 1;
+
+  /* Shadow for lifted effect */
+  box-shadow:
+    3px 5px 15px rgba(0, 0, 0, 0.12),
+    1px 2px 4px rgba(0, 0, 0, 0.08);
+
+  font-family: 'Caveat', cursive;
+  font-size: 22px;
+  color: #4a3528;
+  line-height: 1.6;
+
+  border-radius: 2px 8px 2px 8px;
+
+  transition: all 0.3s ease;
 }
 
 .note:hover {
-    transform: rotate(-1.5deg) translateY(-3px);
-    box-shadow: 
-        5px 8px 20px rgba(0, 0, 0, 0.15),
-        2px 3px 6px rgba(0, 0, 0, 0.1);
+  transform: rotate(-1.5deg) translateY(-3px);
+  box-shadow:
+    5px 8px 20px rgba(0, 0, 0, 0.15),
+    2px 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Tape effect on sticky note */
 .note::before {
-    content: '';
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%) rotate(-3deg);
-    width: 40px;
-    height: 16px;
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 2px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  width: 40px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* ==========================================
@@ -531,21 +503,21 @@ body {
 
 /* Left page — subtle coffee ring */
 .left-page .page-content::after {
-    content: '';
-    position: absolute;
-    bottom: 80px;
-    left: 60px;
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    border: 2px solid rgba(139, 90, 43, 0.08);
-    background: radial-gradient(
-        circle,
-        rgba(139, 90, 43, 0.04) 0%,
-        rgba(139, 90, 43, 0.02) 40%,
-        transparent 60%
-    );
-    pointer-events: none;
+  content: '';
+  position: absolute;
+  bottom: 80px;
+  left: 60px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid rgba(139, 90, 43, 0.08);
+  background: radial-gradient(
+    circle,
+    rgba(139, 90, 43, 0.04) 0%,
+    rgba(139, 90, 43, 0.02) 40%,
+    transparent 60%
+  );
+  pointer-events: none;
 }
 
 /* ==========================================
@@ -554,15 +526,15 @@ body {
 
 /* Right page — small pressed flower */
 .right-page .page-content::after {
-    content: '🌸';
-    position: absolute;
-    bottom: 60px;
-    right: 50px;
-    font-size: 28px;
-    opacity: 0.5;
-    filter: sepia(0.6) saturate(0.7);
-    transform: rotate(-15deg);
-    pointer-events: none;
+  content: '🌸';
+  position: absolute;
+  bottom: 60px;
+  right: 50px;
+  font-size: 28px;
+  opacity: 0.5;
+  filter: sepia(0.6) saturate(0.7);
+  transform: rotate(-15deg);
+  pointer-events: none;
 }
 
 /* ==========================================
@@ -570,30 +542,30 @@ body {
    ========================================== */
 
 .page-number {
-    position: absolute;
-    bottom: 25px;
-    z-index: 1;
-    color: #B5A590;
-    font-size: 13px;
-    font-family: 'Cormorant Garamond', serif;
+  position: absolute;
+  bottom: 25px;
+  z-index: 1;
+  color: #b5a590;
+  font-size: 13px;
+  font-family: 'Cormorant Garamond', serif;
 }
 
 .left-page .page-number {
-    right: 40px;
+  right: 40px;
 }
 
 .right-page .page-number {
-    left: 40px;
+  left: 40px;
 }
 
 /* Page number decorative line */
 .page-number::before {
-    content: '';
-    display: block;
-    width: 20px;
-    height: 1px;
-    background: #C4B5A0;
-    margin: 0 auto 4px;
+  content: '';
+  display: block;
+  width: 20px;
+  height: 1px;
+  background: #c4b5a0;
+  margin: 0 auto 4px;
 }
 
 /* ==========================================
@@ -602,16 +574,16 @@ body {
 
 /* Add a bookmark peeking from the top */
 .notebook {
-    /* Ribbon */
+  /* Ribbon */
 }
 
 .notebook .book-spine {
-    /* Attach ribbon to spine */
+  /* Attach ribbon to spine */
 }
 
 /* Ribbon element */
 .desk {
-    /* Ribbon hangs from notebook */
+  /* Ribbon hangs from notebook */
 }
 
 /* We'll add ribbon via HTML later */
@@ -621,110 +593,108 @@ body {
    ========================================== */
 
 @media (max-width: 1200px) {
-    .notebook {
-        width: 90vw;
-        height: auto;
-        min-height: 600px;
-    }
-    
-    .page {
-        padding: 35px 30px;
-    }
+  .notebook {
+    width: 90vw;
+    height: auto;
+    min-height: 600px;
+  }
+
+  .page {
+    padding: 35px 30px;
+  }
 }
 
 @media (max-width: 768px) {
-    body {
-        padding: 1rem;
-        align-items: flex-start;
-        padding-top: 2rem;
-    }
-    
-    .desk {
-        padding: 1.5rem;
-    }
-    
-    .notebook {
-        flex-direction: column;
-        width: 95vw;
-        height: auto;
-        padding: 10px;
-    }
-    
-    .book-spine {
-        width: 100%;
-        height: 20px;
-        background: linear-gradient(
-            to bottom,
-            #2A1810 0%,
-            #3C2418 20%,
-            #6B4B35 40%,
-            #4A3020 60%,
-            #3C2418 80%,
-            #2A1810 100%
-        );
-        border-radius: 4px 4px 0 0;
-    }
-    
-    .page {
-        padding: 25px 20px;
-        min-height: 350px;
-    }
-    
-    .left-page {
-        border-radius: 0 0 8px 8px;
-        border-right: none;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-        box-shadow: 
-            inset 0 -12px 15px -10px rgba(0, 0, 0, 0.1);
-    }
-    
-    .left-page::after {
-        right: auto;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 30px;
-        background: linear-gradient(
-            to bottom,
-            transparent,
-            rgba(0, 0, 0, 0.03) 50%,
-            rgba(0, 0, 0, 0.05) 100%
-        );
-    }
-    
-    .right-page {
-        border-radius: 8px 8px 0 0;
-        border-left: none;
-        box-shadow: 
-            inset 0 12px 15px -10px rgba(0, 0, 0, 0.1);
-    }
-    
-    .right-page::after {
-        left: auto;
-        top: 0;
-        right: 0;
-        width: 100%;
-        height: 30px;
-        background: linear-gradient(
-            to top,
-            transparent,
-            rgba(0, 0, 0, 0.03) 50%,
-            rgba(0, 0, 0, 0.05) 100%
-        );
-    }
-    
-    .page-header h2,
-    .page-header h3 {
-        font-size: 26px;
-    }
-    
-    .photo-placeholder {
-        width: 160px;
-        height: 120px;
-    }
-    
-    .note {
-        width: 180px;
-        font-size: 18px;
-    }
+  body {
+    padding: 1rem;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+
+  .desk {
+    padding: 1.5rem;
+  }
+
+  .notebook {
+    flex-direction: column;
+    width: 95vw;
+    height: auto;
+    padding: 10px;
+  }
+
+  .book-spine {
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(
+      to bottom,
+      #2a1810 0%,
+      #3c2418 20%,
+      #6b4b35 40%,
+      #4a3020 60%,
+      #3c2418 80%,
+      #2a1810 100%
+    );
+    border-radius: 4px 4px 0 0;
+  }
+
+  .page {
+    padding: 25px 20px;
+    min-height: 350px;
+  }
+
+  .left-page {
+    border-radius: 0 0 8px 8px;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: inset 0 -12px 15px -10px rgba(0, 0, 0, 0.1);
+  }
+
+  .left-page::after {
+    right: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(0, 0, 0, 0.03) 50%,
+      rgba(0, 0, 0, 0.05) 100%
+    );
+  }
+
+  .right-page {
+    border-radius: 8px 8px 0 0;
+    border-left: none;
+    box-shadow: inset 0 12px 15px -10px rgba(0, 0, 0, 0.1);
+  }
+
+  .right-page::after {
+    left: auto;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 30px;
+    background: linear-gradient(
+      to top,
+      transparent,
+      rgba(0, 0, 0, 0.03) 50%,
+      rgba(0, 0, 0, 0.05) 100%
+    );
+  }
+
+  .page-header h2,
+  .page-header h3 {
+    font-size: 26px;
+  }
+
+  .photo-placeholder {
+    width: 160px;
+    height: 120px;
+  }
+
+  .note {
+    width: 180px;
+    font-size: 18px;
+  }
 }

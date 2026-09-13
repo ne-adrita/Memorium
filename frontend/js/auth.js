@@ -21,11 +21,14 @@
     if (form.dataset.memoriumWired) return;
     form.dataset.memoriumWired = '1';
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       const btn = form.querySelector('button[type="submit"]');
       const orig = btn ? btn.textContent : '';
-      if (btn) { btn.disabled = true; btn.textContent = 'Please wait…'; }
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Please wait…';
+      }
 
       try {
         if (type === 'login') {
@@ -33,18 +36,21 @@
           const password = form.querySelector('#password').value;
           const res = await window.MemoriumAPI.login(email, password);
           showMsg(form, 'Welcome back, ' + (res.data.user.name || ''), false);
-          setTimeout(() => window.location.href = 'bookshelf.html', 600);
+          setTimeout(() => (window.location.href = 'bookshelf.html'), 600);
         } else {
           const name = form.querySelector('#name').value.trim();
           const email = form.querySelector('#email').value.trim();
           const password = form.querySelector('#password').value;
           const res = await window.MemoriumAPI.register(name, email, password);
           showMsg(form, 'Account created for ' + res.data.user.name, false);
-          setTimeout(() => window.location.href = 'bookshelf.html', 600);
+          setTimeout(() => (window.location.href = 'bookshelf.html'), 600);
         }
       } catch (err) {
         showMsg(form, err.message || 'Request failed', true);
-        if (btn) { btn.disabled = false; btn.textContent = orig; }
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
       }
     });
   }
@@ -56,7 +62,9 @@
     if (!actions) return;
     // Toggle existing unauth links (login/register) visibility
     const unauthLinks = actions.querySelectorAll('a[href="login.html"], a[href="register.html"]');
-    unauthLinks.forEach(a => { a.style.display = isAuthed ? 'none' : ''; });
+    unauthLinks.forEach(a => {
+      a.style.display = isAuthed ? 'none' : '';
+    });
 
     const existingLogout = document.getElementById('memorium-logout');
     const existingLogin = document.getElementById('memorium-login-link');
@@ -78,7 +86,9 @@
     } else {
       if (existingLogout) existingLogout.remove();
       // ensure unauth links visible
-      unauthLinks.forEach(a => { a.style.display = ''; });
+      unauthLinks.forEach(a => {
+        a.style.display = '';
+      });
     }
 
     // If on protected pages without auth, show hint (do not auto-redirect from public pages like index)
@@ -90,10 +100,12 @@
       if (!hint) {
         const h = document.createElement('div');
         h.id = 'auth-hint';
-        h.style.cssText = 'max-width:600px;margin:1rem auto;padding:1rem;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.2);border-radius:12px;text-align:center;font-family:var(--heading-font)';
-        h.innerHTML = 'Please <a href="login.html" style="text-decoration:underline">sign in</a> to view your journals. You will be redirected.';
+        h.style.cssText =
+          'max-width:600px;margin:1rem auto;padding:1rem;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.2);border-radius:12px;text-align:center;font-family:var(--heading-font)';
+        h.innerHTML =
+          'Please <a href="login.html" style="text-decoration:underline">sign in</a> to view your journals. You will be redirected.';
         document.body.prepend(h);
-        setTimeout(() => window.location.href = 'login.html', 1800);
+        setTimeout(() => (window.location.href = 'login.html'), 1800);
       }
     }
   }
@@ -113,8 +125,8 @@
     // Fallback: if form has 3 inputs, it's register
     if (form && !form.dataset.memoriumWired) {
       const inputs = form.querySelectorAll('input');
-      if (inputs.length >= 3) wireForm(form.id||'', 'register');
-      else wireForm(form.id||'', 'login');
+      if (inputs.length >= 3) wireForm(form.id || '', 'register');
+      else wireForm(form.id || '', 'login');
     }
     updateNavbar();
 

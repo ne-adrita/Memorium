@@ -51,15 +51,15 @@ FRONTEND_URL=http://localhost:5500,http://localhost:3000
 # SERVE_FRONTEND=true   # uncomment if backend should also serve frontend
 ```
 
-| Variable | Required | Description |
-|---|---|---|
-| `PORT` | No (default 3000, cloud uses 10000) | Backend port; must be `process.env.PORT` in production |
-| `MONGO_URI` | Yes | MongoDB Atlas connection string |
-| `JWT_SECRET` | Yes | Strong random string (32+ chars) |
-| `JWT_EXPIRES_IN` | No | e.g. `7d` |
-| `FRONTEND_URL` | Production yes | Comma-separated allowed origins for CORS. Example: `https://your-frontend.netlify.app` |
-| `NODE_ENV` | No | `production` hides stack traces and tightens error messages |
-| `SERVE_FRONTEND` | No | `true` makes backend serve `frontend/` static files |
+| Variable         | Required                            | Description                                                                            |
+| ---------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `PORT`           | No (default 3000, cloud uses 10000) | Backend port; must be `process.env.PORT` in production                                 |
+| `MONGO_URI`      | Yes                                 | MongoDB Atlas connection string                                                        |
+| `JWT_SECRET`     | Yes                                 | Strong random string (32+ chars)                                                       |
+| `JWT_EXPIRES_IN` | No                                  | e.g. `7d`                                                                              |
+| `FRONTEND_URL`   | Production yes                      | Comma-separated allowed origins for CORS. Example: `https://your-frontend.netlify.app` |
+| `NODE_ENV`       | No                                  | `production` hides stack traces and tightens error messages                            |
+| `SERVE_FRONTEND` | No                                  | `true` makes backend serve `frontend/` static files                                    |
 
 **Never** put real values in `.env.example` or `README.md`.
 
@@ -121,7 +121,7 @@ SERVE_FRONTEND=true NODE_ENV=production PORT=3000 npm start
    - `MONGO_URI` = your Atlas string (no spaces after `=`)
    - `JWT_SECRET` = strong random (e.g. `openssl rand -hex 32`)
    - `JWT_EXPIRES_IN=7d`
-   - `FRONTEND_URL=https://your-frontend.netlify.app`  (or `https://your-backend.onrender.com` if using SERVE_FRONTEND)
+   - `FRONTEND_URL=https://your-frontend.netlify.app` (or `https://your-backend.onrender.com` if using SERVE_FRONTEND)
    - `PORT=10000` (Render injects this automatically; optional)
 8. Deploy. Health check path: `/api/health`.
 
@@ -173,7 +173,7 @@ Local dev defaults to `http://localhost:3000` when on `localhost`.
 
 1. Netlify -> Add new site -> Import from GitHub
 2. **Base directory:** `frontend`
-3. **Build command:** *(empty — plain HTML, no build)*
+3. **Build command:** _(empty — plain HTML, no build)_
 4. **Publish directory:** `frontend` (or `/` if base is already `frontend`)
 5. Add a snippet or edit `js/config.js` to set `window.__MEMORIUM_API_URL` to your backend URL
 6. Deploy. Set `FRONTEND_URL` on backend to your Netlify URL (e.g. `https://your-site.netlify.app`)
@@ -270,4 +270,3 @@ All error responses are production-safe: generic `Internal server error` for 500
 - CORS error in browser -> check `FRONTEND_URL` on backend matches your frontend origin exactly (no trailing slash needed; `https://` required)
 - `Image file not found` after restart -> expected on ephemeral hosts (see Image Storage section)
 - Frontend shows localhost API error -> edit `frontend/js/config.js` and redeploy
-

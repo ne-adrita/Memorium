@@ -3,371 +3,360 @@
    Clean slate for consistent rendering across browsers.
    ============================================================ */
 
-   *,
-   *::before,
-   *::after {
-       margin: 0;
-       padding: 0;
-       box-sizing: border-box;
-   }
-   
-   html {
-       font-size: 16px;
-       scroll-behavior: smooth;
-       -webkit-font-smoothing: antialiased;
-       -moz-osx-font-smoothing: grayscale;
-       text-rendering: optimizeLegibility;
-   }
-   
-   body {
-       min-height: 100vh;
-       line-height: var(--lh-normal);
-       font-family: var(--font-body);
-       color: var(--text-primary);
-       background-color: var(--bg-primary);
-       -webkit-text-size-adjust: 100%;
-   }
-   
-   img,
-   picture,
-   video,
-   canvas,
-   svg {
-       display: block;
-       max-width: 100%;
-       height: auto;
-   }
-   
-   input,
-   button,
-   textarea,
-   select {
-       font: inherit;
-       color: inherit;
-   }
-   
-   button {
-       cursor: pointer;
-       border: none;
-       background: none;
-       font-family: inherit;
-   }
-   
-   a {
-       text-decoration: none;
-       color: inherit;
-   }
-   
-   ul,
-   ol {
-       list-style: none;
-   }
-   
-   h1, h2, h3, h4, h5, h6 {
-       font-family: var(--font-heading);
-       font-weight: var(--fw-semibold);
-       line-height: var(--lh-tight);
-       overflow-wrap: break-word;
-   }
-   
-   p {
-       overflow-wrap: break-word;
-   }
-   
-   table {
-       border-collapse: collapse;
-       border-spacing: 0;
-   }
-   
-   fieldset {
-       border: none;
-   }
-   
-   address {
-       font-style: normal;
-   }
-   
-   :focus-visible {
-       outline: 2px solid var(--accent-gold);
-       outline-offset: 2px;
-       border-radius: var(--radius-sm);
-   }
-   
-   ::selection {
-       background: rgba(201, 162, 39, 0.2);
-       color: var(--text-primary);
-   }
-   
-   @media (prefers-reduced-motion: reduce) {
-       *,
-       *::before,
-       *::after {
-           animation-duration: 0.01ms !important;
-           animation-iteration-count: 1 !important;
-           transition-duration: 0.01ms !important;
-           scroll-behavior: auto !important;
-       }
-   }
-   
-   ::-webkit-scrollbar {
-       width: 6px;
-   }
-   
-   ::-webkit-scrollbar-track {
-       background: var(--bg-secondary);
-   }
-   
-   ::-webkit-scrollbar-thumb {
-       background: var(--color-primary-light);
-       border-radius: var(--radius-full);
-   }
-   
-   ::-webkit-scrollbar-thumb:hover {
-       background: var(--color-primary);
-   }
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-   /* ============================================================
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+  line-height: var(--lh-normal);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  -webkit-text-size-adjust: 100%;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  overflow-wrap: break-word;
+}
+
+p {
+  overflow-wrap: break-word;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+fieldset {
+  border: none;
+}
+
+address {
+  font-style: normal;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: rgba(201, 162, 39, 0.2);
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* ============================================================
    MEMORIUM — DESIGN TOKENS
    Single source of truth. Change once, update everywhere.
    ============================================================ */
 
 :root {
-
-    /* ========================================================
+  /* ========================================================
        COLORS
        ======================================================== */
 
-    /* Primary — Leather & Wood Tones */
-    --primary:                #6B4F3B;
-    --primary-dark:           #4A3428;
-    --primary-light:          #8B6A52;
-    --primary-rgb:            107, 79, 59;
+  /* Primary — Leather & Wood Tones */
+  --primary: #6b4f3b;
+  --primary-dark: #4a3428;
+  --primary-light: #8b6a52;
+  --primary-rgb: 107, 79, 59;
 
-    /* Secondary — Coffee & Earth */
-    --secondary:              #A67B5B;
-    --secondary-light:        #C4A882;
-    --secondary-dark:         #7A5744;
+  /* Secondary — Coffee & Earth */
+  --secondary: #a67b5b;
+  --secondary-light: #c4a882;
+  --secondary-dark: #7a5744;
 
-    /* Accents */
-    --accent-gold:            #C9A227;
-    --accent-gold-light:      #E0C350;
-    --accent-gold-rgb:        201, 162, 39;
-    --accent-green:           #6D8B74;
-    --accent-burgundy:        #7A3E3E;
+  /* Accents */
+  --accent-gold: #c9a227;
+  --accent-gold-light: #e0c350;
+  --accent-gold-rgb: 201, 162, 39;
+  --accent-green: #6d8b74;
+  --accent-burgundy: #7a3e3e;
 
-    /* Paper — Journal Pages */
-    --paper:                  #F8F1E7;
-    --old-paper:              #EFE3D0;
-    --paper-dark:             #E5D8C4;
-    --paper-rgb:              248, 241, 231;
+  /* Paper — Journal Pages */
+  --paper: #f8f1e7;
+  --old-paper: #efe3d0;
+  --paper-dark: #e5d8c4;
+  --paper-rgb: 248, 241, 231;
 
-    /* Backgrounds */
-    --background:             #FFFDF8;
-    --background-dark:        #2B211B;
-    --background-dark-rgb:    43, 33, 27;
+  /* Backgrounds */
+  --background: #fffdf8;
+  --background-dark: #2b211b;
+  --background-dark-rgb: 43, 33, 27;
 
-    /* Neutrals */
-    --white:                  #FFFFFF;
-    --black:                  #000000;
+  /* Neutrals */
+  --white: #ffffff;
+  --black: #000000;
 
-    /* Text */
-    --text-dark:              #2F241F;
-    --text-light:             #6E6259;
-    --text-muted:             #9B8E84;
+  /* Text */
+  --text-dark: #2f241f;
+  --text-light: #6e6259;
+  --text-muted: #9b8e84;
 
-    /* Borders */
-    --border:                 #DDD1BF;
-    --border-light:           rgba(107, 79, 59, 0.1);
-    --border-medium:          rgba(107, 79, 59, 0.2);
+  /* Borders */
+  --border: #ddd1bf;
+  --border-light: rgba(107, 79, 59, 0.1);
+  --border-medium: rgba(107, 79, 59, 0.2);
 
-    /* Functional */
-    --success:                #6B9B73;
-    --warning:                #D8A048;
-    --danger:                 #B85C5C;
+  /* Functional */
+  --success: #6b9b73;
+  --warning: #d8a048;
+  --danger: #b85c5c;
 
-    /* Overlays */
-    --overlay-light:          rgba(43, 33, 27, 0.3);
-    --overlay-dark:           rgba(43, 33, 27, 0.6);
-    --glass-bg:               rgba(248, 241, 231, 0.85);
+  /* Overlays */
+  --overlay-light: rgba(43, 33, 27, 0.3);
+  --overlay-dark: rgba(43, 33, 27, 0.6);
+  --glass-bg: rgba(248, 241, 231, 0.85);
 
-
-    /* ========================================================
+  /* ========================================================
        TYPOGRAPHY — Font Families
        ======================================================== */
 
-    --heading-font:           "Cormorant Garamond", Georgia, "Times New Roman", serif;
-    --body-font:              "Lora", Georgia, "Times New Roman", serif;
-    --handwriting-font:       "Caveat", "Brush Script MT", cursive;
-    --vintage-font:           "Playfair Display", Georgia, serif;
-    --ui-font:                Arial, Helvetica, sans-serif;
-    --mono-font:              "Courier Prime", "Courier New", monospace;
+  --heading-font: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --body-font: 'Lora', Georgia, 'Times New Roman', serif;
+  --handwriting-font: 'Caveat', 'Brush Script MT', cursive;
+  --vintage-font: 'Playfair Display', Georgia, serif;
+  --ui-font: Arial, Helvetica, sans-serif;
+  --mono-font: 'Courier Prime', 'Courier New', monospace;
 
-
-    /* ========================================================
+  /* ========================================================
        FONT SIZES — Major Third Scale
        ======================================================== */
 
-    --fs-xs:                  .75rem;      /* 12px */
-    --fs-sm:                  .875rem;     /* 14px */
-    --fs-md:                  1rem;        /* 16px */
-    --fs-lg:                  1.25rem;     /* 20px */
-    --fs-xl:                  1.5rem;      /* 24px */
-    --fs-2xl:                 2rem;        /* 32px */
-    --fs-3xl:                 3rem;        /* 48px */
-    --fs-4xl:                 4rem;        /* 64px */
-    --fs-5xl:                 5rem;        /* 80px */
+  --fs-xs: 0.75rem; /* 12px */
+  --fs-sm: 0.875rem; /* 14px */
+  --fs-md: 1rem; /* 16px */
+  --fs-lg: 1.25rem; /* 20px */
+  --fs-xl: 1.5rem; /* 24px */
+  --fs-2xl: 2rem; /* 32px */
+  --fs-3xl: 3rem; /* 48px */
+  --fs-4xl: 4rem; /* 64px */
+  --fs-5xl: 5rem; /* 80px */
 
-
-    /* ========================================================
+  /* ========================================================
        FONT WEIGHTS
        ======================================================== */
 
-    --fw-light:               300;
-    --fw-regular:             400;
-    --fw-medium:              500;
-    --fw-semibold:            600;
-    --fw-bold:                700;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
 
-
-    /* ========================================================
+  /* ========================================================
        LINE HEIGHTS
        ======================================================== */
 
-    --lh-tight:               1.15;
-    --lh-snug:                1.35;
-    --lh-normal:              1.6;
-    --lh-relaxed:             1.8;
-    --lh-loose:               2;
+  --lh-tight: 1.15;
+  --lh-snug: 1.35;
+  --lh-normal: 1.6;
+  --lh-relaxed: 1.8;
+  --lh-loose: 2;
 
-
-    /* ========================================================
+  /* ========================================================
        SPACING — 4px Base Grid
        ======================================================== */
 
-    --space-1:                4px;
-    --space-2:                8px;
-    --space-3:                12px;
-    --space-4:                16px;
-    --space-5:                24px;
-    --space-6:                32px;
-    --space-7:                48px;
-    --space-8:                64px;
-    --space-9:                96px;
-    --space-10:               120px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 120px;
 
-    /* Semantic Spacing */
-    --section-gap:            var(--space-9);
-    --card-padding:           var(--space-6);
-    --button-padding-x:       var(--space-5);
-    --button-padding-y:       var(--space-4);
-    --input-padding-x:        var(--space-4);
-    --input-padding-y:        var(--space-3);
+  /* Semantic Spacing */
+  --section-gap: var(--space-9);
+  --card-padding: var(--space-6);
+  --button-padding-x: var(--space-5);
+  --button-padding-y: var(--space-4);
+  --input-padding-x: var(--space-4);
+  --input-padding-y: var(--space-3);
 
-
-    /* ========================================================
+  /* ========================================================
        BORDER RADIUS
        ======================================================== */
 
-    --radius-sm:              6px;
-    --radius-md:              12px;
-    --radius-lg:              18px;
-    --radius-xl:              30px;
-    --radius-round:           999px;
-    --radius-book:            4px 16px 16px 4px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 30px;
+  --radius-round: 999px;
+  --radius-book: 4px 16px 16px 4px;
 
-
-    /* ========================================================
+  /* ========================================================
        SHADOWS — Soft & Elegant Only
        ======================================================== */
 
-    --shadow-sm:              0 3px 10px rgba(0, 0, 0, .08);
-    --shadow-md:              0 10px 30px rgba(0, 0, 0, .12);
-    --shadow-lg:              0 20px 50px rgba(0, 0, 0, .18);
-    --shadow-book:            0 25px 60px rgba(0, 0, 0, .25);
-    --shadow-card-hover:      0 12px 35px rgba(0, 0, 0, .15);
-    --shadow-button:          0 4px 15px rgba(0, 0, 0, .12);
-    --shadow-gold-glow:       0 0 30px rgba(201, 162, 39, .2);
-    --shadow-inner:           inset 0 1px 3px rgba(0, 0, 0, .05);
+  --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.18);
+  --shadow-book: 0 25px 60px rgba(0, 0, 0, 0.25);
+  --shadow-card-hover: 0 12px 35px rgba(0, 0, 0, 0.15);
+  --shadow-button: 0 4px 15px rgba(0, 0, 0, 0.12);
+  --shadow-gold-glow: 0 0 30px rgba(201, 162, 39, 0.2);
+  --shadow-inner: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 
-
-    /* ========================================================
+  /* ========================================================
        TRANSITIONS
        ======================================================== */
 
-    --transition-fast:        .2s ease;
-    --transition-normal:      .35s ease;
-    --transition-slow:        .6s ease;
-    --transition-book:        .9s ease;
-    --transition-glacial:     1.2s ease;
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.35s ease;
+  --transition-slow: 0.6s ease;
+  --transition-book: 0.9s ease;
+  --transition-glacial: 1.2s ease;
 
-    /* Specific Transitions */
-    --transition-colors:      background-color .35s ease,
-                              color .35s ease,
-                              border-color .35s ease;
-    --transition-transform:   transform .35s ease;
-    --transition-shadow:      box-shadow .35s ease;
-    --transition-opacity:     opacity .35s ease;
+  /* Specific Transitions */
+  --transition-colors: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+  --transition-transform: transform 0.35s ease;
+  --transition-shadow: box-shadow 0.35s ease;
+  --transition-opacity: opacity 0.35s ease;
 
-
-    /* ========================================================
+  /* ========================================================
        Z-INDEX — Layer Management
        ======================================================== */
 
-    --z-base:                 1;
-    --z-above:                5;
-    --z-navbar:               100;
-    --z-dropdown:             500;
-    --z-overlay:              800;
-    --z-modal:                1000;
-    --z-toast:                1100;
-    --z-loader:               9999;
+  --z-base: 1;
+  --z-above: 5;
+  --z-navbar: 100;
+  --z-dropdown: 500;
+  --z-overlay: 800;
+  --z-modal: 1000;
+  --z-toast: 1100;
+  --z-loader: 9999;
 
-
-    /* ========================================================
+  /* ========================================================
        LAYOUT — Measurements
        ======================================================== */
 
-    --container-width:        1200px;
-    --container-narrow:       800px;
-    --navbar-height:          90px;
-    --navbar-height-mobile:   65px;
+  --container-width: 1200px;
+  --container-narrow: 800px;
+  --navbar-height: 90px;
+  --navbar-height-mobile: 65px;
 
-
-    /* ========================================================
+  /* ========================================================
        NOTEBOOK — Dimensions
        ======================================================== */
 
-    --book-width:             1000px;
-    --book-height:            650px;
-    --page-width:             50%;
-    --page-padding:           40px;
-    --spine-width:            28px;
+  --book-width: 1000px;
+  --book-height: 650px;
+  --page-width: 50%;
+  --page-padding: 40px;
+  --spine-width: 28px;
 
-
-    /* ========================================================
+  /* ========================================================
        COMPONENTS
        ======================================================== */
 
-    /* Buttons */
-    --button-height:          54px;
-    --button-radius:          12px;
-    --button-font-size:       var(--fs-md);
+  /* Buttons */
+  --button-height: 54px;
+  --button-radius: 12px;
+  --button-font-size: var(--fs-md);
 
-    /* Inputs */
-    --input-height:           55px;
-    --input-radius:           var(--radius-md);
+  /* Inputs */
+  --input-height: 55px;
+  --input-radius: var(--radius-md);
 
-    /* Cards */
-    --card-radius:            var(--radius-lg);
+  /* Cards */
+  --card-radius: var(--radius-lg);
 
-    /* Hero */
-    --hero-height:            100vh;
+  /* Hero */
+  --hero-height: 100vh;
 
-    /* Footer */
-    --footer-padding:         80px;
+  /* Footer */
+  --footer-padding: 80px;
 
-
-    /* ========================================================
+  /* ========================================================
        BREAKPOINTS — Reference Only (for @media queries)
        
        Mobile:  480px

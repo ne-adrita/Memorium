@@ -1,221 +1,413 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Memorium — My Journals</title>
-    <meta name="title" content="Memorium — My Journals">
-    <meta name="description" content="View and manage your journal library in Memorium">
-    <meta name="keywords" content="digital journal, personal library, journal collection">
-    <meta name="author" content="Memorium">
-    <meta name="robots" content="index, follow">
-    <meta name="language" content="English">
+    <meta name="title" content="Memorium — My Journals" />
+    <meta name="description" content="View and manage your journal library in Memorium" />
+    <meta name="keywords" content="digital journal, personal library, journal collection" />
+    <meta name="author" content="Memorium" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
 
     <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://memorium.app/bookshelf">
-    <meta property="og:title" content="Memorium — My Journals">
-    <meta property="og:description" content="View your journal library in Memorium">
-    <meta property="og:image" content="https://memorium.app/assets/images/og-image.jpg">
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://memorium.app/bookshelf" />
+    <meta property="og:title" content="Memorium — My Journals" />
+    <meta property="og:description" content="View your journal library in Memorium" />
+    <meta property="og:image" content="https://memorium.app/assets/images/og-image.jpg" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
 
     <!-- Theme Color -->
-    <meta name="theme-color" content="#4A3428">
-    <meta name="msapplication-TileColor" content="#4A3428">
+    <meta name="theme-color" content="#4A3428" />
+    <meta name="msapplication-TileColor" content="#4A3428" />
 
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Caveat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Caveat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/variables.css">
-    <link rel="stylesheet" href="css/reset.css">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/animation.css">
-    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/reset.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/animation.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
 
     <!-- Notebook Component CSS -->
-    <link rel="stylesheet" href="components/notebook/notebook.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="components/notebook/notebook.css" />
+  </head>
+  <body>
     <!-- ============================================================
          NAVBAR
          ============================================================ -->
     <header class="navbar" id="navbar" role="banner">
-        <nav class="nav-container" aria-label="Main navigation">
-            
-            <!-- Brand Logo -->
-            <a href="index.html" class="nav-brand" aria-label="Memorium Home">
-                <span class="nav-brand-icon">📖</span>
-                Memor<span>ium</span>
-            </a>
-            
-            <!-- Navigation Links -->
-            <ul class="nav-links" role="list">
-                <li><a href="index.html" class="nav-link active">Home</a></li>
-                <li><a href="bookshelf.html" class="nav-link">My Journals</a></li>
-                <li><a href="journal.html" class="nav-link">Journal</a></li>
-                <li><a href="login.html" class="btn btn-outline">Sign In</a></li>
-            </ul>
-            
-            <!-- Mobile Toggle -->
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </nav>
+      <nav class="nav-container" aria-label="Main navigation">
+        <!-- Brand Logo -->
+        <a href="index.html" class="nav-brand" aria-label="Memorium Home">
+          <span class="nav-brand-icon">📖</span>
+          Memor<span>ium</span>
+        </a>
+
+        <!-- Navigation Links -->
+        <ul class="nav-links" role="list">
+          <li><a href="index.html" class="nav-link active">Home</a></li>
+          <li><a href="bookshelf.html" class="nav-link">My Journals</a></li>
+          <li><a href="journal.html" class="nav-link">Journal</a></li>
+          <li><a href="login.html" class="btn btn-outline">Sign In</a></li>
+        </ul>
+
+        <!-- Mobile Toggle -->
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          aria-label="Toggle navigation menu"
+          aria-expanded="false"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
     </header>
 
     <!-- ============================================================
          MAIN CONTENT
          ============================================================ -->
     <main>
-        
-        <!-- ============================================================
+      <!-- ============================================================
              BOOKSHELF HER0
              ============================================================ -->
-        <section class="hero" style="padding-top: calc(var(--navbar-height) + 2rem); min-height: auto;">
-            <div class="hero-container">
-                
-                <!-- Bookshelf Text Content -->
-                <div class="hero-content">
-                    <div class="hero-badge">
-                        ✨ Your Journal Library
-                    </div>
-                    
-                    <h1 class="hero-title">
-                        Your journals,
-                        <em>growing</em> old with you.
-                    </h1>
-                    
-                    <p class="hero-description">
-                        Every journal you've kept, every memory preserved. 
-                        See how your story has unfolded over time.
-                    </p>
-                    
-                    <div class="hero-buttons">
-                        <a href="journal.html" class="btn btn-gold btn-lg">
-                            ✍️ New Journal
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Bookshelf Visual -->
-                <div class="hero-visual" aria-hidden="true">
-                    <div class="desk-scene">
-                        <!-- Desk Surface -->
-                        <div class="desk-surface"></div>
-                        
-                        <!-- Leather Notebook Stack -->
-                        <div class="hero-notebook" style="bottom: 30px; left: 50%; transform: translateX(-50%) rotate(-3deg); width: 200px; height: 260px; background: linear-gradient(135deg, #7A3E15 0%, #5C2D0E 50%, #8B4513 100%); border-radius: 3px 14px 14px 3px; box-shadow: 6px 10px 30px rgba(0, 0, 0, 0.5), 2px 3px 0 #3D1F0A; animation: floatBook 5s ease-in-out infinite;">
-                            <div class="notebook-shine" style="top: 12px; right: 10px; width: 60px; height: 90px; background: linear-gradient(135deg, rgba(255,255,255,0.09) 0%, transparent 50%); border-radius: 2px; animation: shineSlow 4s ease-in-out infinite;"></div>
-                        </div>
-                        
-                        <!-- Notebook 2 (behind) -->
-                        <div class="hero-notebook" style="bottom: 20px; left: 45%; transform: translateX(-50%) rotate(-2deg) scale(0.85); width: 150px; height: 200px; background: linear-gradient(135deg, #7A3E15 0%, #5C2D0E 50%, #8B4513 100%); border-radius: 3px 14px 14px 3px; box-shadow: 6px 10px 30px rgba(0, 0, 0, 0.5), 2px 3px 0 #3D1F0A; animation: floatBook 5s ease-in-out infinite; position: absolute; z-index: 1; opacity: 0.8;"></div>
-                        
-                        <!-- Candle -->
-                        <div class="hero-candle" style="bottom: 40px; left: 35px; animation: floatCandle 5.2s ease-in-out 1s infinite;">
-                            <div class="candle-body" style="width: 28px; height: 45px; background: linear-gradient(180deg, #FFFEF9 0%, #F0EBE0 50%, #E5DDCF 100%); border-radius: 2px; box-shadow: 2px 3px 10px rgba(0,0,0,0.3);"></div>
-                            <div class="flame" style="top: -22px; left: 50%; transform: translateX(-50%); width: 10px; height: 18px; background: radial-gradient(ellipse at 50% 60%, #FFFAF0 0%, #FFD700 20%, #FF8C00 50%, transparent 75%); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; animation: flicker 0.12s ease-in-out infinite alternate;"></div>
-                            <div class="flame-glow" style="top: -6px; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; background: radial-gradient(circle, rgba(255,180,50,0.2) 0%, transparent 60%); border-radius: 50%; animation: pulseGlow 2.5s ease-in-out infinite;"></div>
-                        </div>
-                        
-                        <!-- Flower -->
-                        <div class="hero-flower" style="bottom: 65px; left: 55px; font-size: 26px; filter: sepia(0.5) saturate(0.7); transform: rotate(-10deg); animation: floatFlower 5.8s ease-in-out 2s infinite; opacity: 0.7;">🌸</div>
-                    </div>
-                </div>
-                
-            </div>
-        </section>
+      <section
+        class="hero"
+        style="padding-top: calc(var(--navbar-height) + 2rem); min-height: auto"
+      >
+        <div class="hero-container">
+          <!-- Bookshelf Text Content -->
+          <div class="hero-content">
+            <div class="hero-badge">✨ Your Journal Library</div>
 
-        <!-- ============================================================
+            <h1 class="hero-title">
+              Your journals,
+              <em>growing</em> old with you.
+            </h1>
+
+            <p class="hero-description">
+              Every journal you've kept, every memory preserved. See how your story has unfolded
+              over time.
+            </p>
+
+            <div class="hero-buttons">
+              <a href="journal.html" class="btn btn-gold btn-lg"> ✍️ New Journal </a>
+            </div>
+          </div>
+
+          <!-- Bookshelf Visual -->
+          <div class="hero-visual" aria-hidden="true">
+            <div class="desk-scene">
+              <!-- Desk Surface -->
+              <div class="desk-surface"></div>
+
+              <!-- Leather Notebook Stack -->
+              <div
+                class="hero-notebook"
+                style="
+                  bottom: 30px;
+                  left: 50%;
+                  transform: translateX(-50%) rotate(-3deg);
+                  width: 200px;
+                  height: 260px;
+                  background: linear-gradient(135deg, #7a3e15 0%, #5c2d0e 50%, #8b4513 100%);
+                  border-radius: 3px 14px 14px 3px;
+                  box-shadow:
+                    6px 10px 30px rgba(0, 0, 0, 0.5),
+                    2px 3px 0 #3d1f0a;
+                  animation: floatBook 5s ease-in-out infinite;
+                "
+              >
+                <div
+                  class="notebook-shine"
+                  style="
+                    top: 12px;
+                    right: 10px;
+                    width: 60px;
+                    height: 90px;
+                    background: linear-gradient(
+                      135deg,
+                      rgba(255, 255, 255, 0.09) 0%,
+                      transparent 50%
+                    );
+                    border-radius: 2px;
+                    animation: shineSlow 4s ease-in-out infinite;
+                  "
+                ></div>
+              </div>
+
+              <!-- Notebook 2 (behind) -->
+              <div
+                class="hero-notebook"
+                style="
+                  bottom: 20px;
+                  left: 45%;
+                  transform: translateX(-50%) rotate(-2deg) scale(0.85);
+                  width: 150px;
+                  height: 200px;
+                  background: linear-gradient(135deg, #7a3e15 0%, #5c2d0e 50%, #8b4513 100%);
+                  border-radius: 3px 14px 14px 3px;
+                  box-shadow:
+                    6px 10px 30px rgba(0, 0, 0, 0.5),
+                    2px 3px 0 #3d1f0a;
+                  animation: floatBook 5s ease-in-out infinite;
+                  position: absolute;
+                  z-index: 1;
+                  opacity: 0.8;
+                "
+              ></div>
+
+              <!-- Candle -->
+              <div
+                class="hero-candle"
+                style="
+                  bottom: 40px;
+                  left: 35px;
+                  animation: floatCandle 5.2s ease-in-out 1s infinite;
+                "
+              >
+                <div
+                  class="candle-body"
+                  style="
+                    width: 28px;
+                    height: 45px;
+                    background: linear-gradient(180deg, #fffef9 0%, #f0ebe0 50%, #e5ddcf 100%);
+                    border-radius: 2px;
+                    box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.3);
+                  "
+                ></div>
+                <div
+                  class="flame"
+                  style="
+                    top: -22px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 10px;
+                    height: 18px;
+                    background: radial-gradient(
+                      ellipse at 50% 60%,
+                      #fffaf0 0%,
+                      #ffd700 20%,
+                      #ff8c00 50%,
+                      transparent 75%
+                    );
+                    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+                    animation: flicker 0.12s ease-in-out infinite alternate;
+                  "
+                ></div>
+                <div
+                  class="flame-glow"
+                  style="
+                    top: -6px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 40px;
+                    height: 40px;
+                    background: radial-gradient(
+                      circle,
+                      rgba(255, 180, 50, 0.2) 0%,
+                      transparent 60%
+                    );
+                    border-radius: 50%;
+                    animation: pulseGlow 2.5s ease-in-out infinite;
+                  "
+                ></div>
+              </div>
+
+              <!-- Flower -->
+              <div
+                class="hero-flower"
+                style="
+                  bottom: 65px;
+                  left: 55px;
+                  font-size: 26px;
+                  filter: sepia(0.5) saturate(0.7);
+                  transform: rotate(-10deg);
+                  animation: floatFlower 5.8s ease-in-out 2s infinite;
+                  opacity: 0.7;
+                "
+              >
+                🌸
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
              JOURNAL LIBRARY
              ============================================================ -->
-        <section class="section" style="padding-top: var(--section-gap);">
-            <div class="container">
-                <header class="section-heading">
-                    <span class="section-subtitle">My Library</span>
-                    <h2 class="section-title">Your Journals</h2>
-                    <p class="section-description">A collection of memories preserved</p>
-                </header>
-                
-                <div class="grid grid--auto">
-                    
-                    <!-- Journal Card 1 -->
-                    <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6);">
-                        <div class="card-header" style="background: var(--paper); padding: var(--space-5); border-radius: var(--radius-md); margin-bottom: var(--space-4);">
-                            <span class="card-meta" style="color: var(--color-primary);">Journal #001</span>
-                        </div>
-                        <div class="card-body" style="padding: var(--space-4); background: var(--paper); border-radius: var(--radius-md); min-height: 120px;">
-                            <p class="card-text" style="color: var(--color-text-dark); font-family: var(--font-body); font-size: var(--fs-md); line-height: 1.6;">
-                                <span class="first-letter">T</span>he beginning of my 
-                                Memorium journey. First entries, first memories.
-                            </p>
-                        </div>
-                        <div class="card-footer" style="padding: var(--space-3); border-top: 1px solid var(--border);">
-                            <span class="card-date" style="color: var(--color-text-muted);">Started: February 2026</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Journal Card 2 -->
-                    <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6);">
-                        <div class="card-header" style="background: var(--paper); padding: var(--space-5); border-radius: var(--radius-md); margin-bottom: var(--space-4);">
-                            <span class="card-meta" style="color: var(--color-primary);">Journal #002</span>
-                        </div>
-                        <div class="card-body" style="padding: var(--space-4); background: var(--paper); border-radius: var(--radius-md); min-height: 120px;">
-                            <p class="card-text" style="color: var(--color-text-dark); font-family: var(--font-body); font-size: var(--fs-md); line-height: 1.6;">
-                                Travel memories from my Paris trip. 
-                                Sunsets, cafes, and stolen moments.
-                            </p>
-                        </div>
-                        <div class="card-footer" style="padding: var(--space-3); border-top: 1px solid var(--border);">
-                            <span class="card-date" style="color: var(--color-text-muted);">Added: March 2026</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Journal Card 3 -->
-                    <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6);">
-                        <div class="card-header" style="background: var(--paper); padding: var(--space-5); border-radius: var(--radius-md); margin-bottom: var(--space-4);">
-                            <span class="card-meta" style="color: var(--color-primary);">Journal #003</span>
-                        </div>
-                        <div class="card-body" style="padding: var(--space-4); background: var(--paper); border-radius: var(--radius-md); min-height: 120px;">
-                            <p class="card-text" style="color: var(--color-text-dark); font-family: var(--font-body); font-size: var(--fs-md); line-height: 1.6;">
-                                Gratitude journal. Daily moments of thankfulness. 
-                                The pages that aged with me.
-                            </p>
-                        </div>
-                        <div class="card-footer" style="padding: var(--space-3); border-top: 1px solid var(--border);">
-                            <span class="card-date" style="color: var(--color-text-muted);">Ongoing</span>
-                        </div>
-                    </article>
-                    
-                </div>
-                
-                <div class="flex--center section-footer">
-                    <a href="journal.html" class="btn btn-outline">+ Start New Journal</a>
-                </div>
-                
-            </div>
-        </section>
+      <section class="section" style="padding-top: var(--section-gap)">
+        <div class="container">
+          <header class="section-heading">
+            <span class="section-subtitle">My Library</span>
+            <h2 class="section-title">Your Journals</h2>
+            <p class="section-description">A collection of memories preserved</p>
+          </header>
 
+          <div class="grid grid--auto">
+            <!-- Journal Card 1 -->
+            <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6)">
+              <div
+                class="card-header"
+                style="
+                  background: var(--paper);
+                  padding: var(--space-5);
+                  border-radius: var(--radius-md);
+                  margin-bottom: var(--space-4);
+                "
+              >
+                <span class="card-meta" style="color: var(--color-primary)">Journal #001</span>
+              </div>
+              <div
+                class="card-body"
+                style="
+                  padding: var(--space-4);
+                  background: var(--paper);
+                  border-radius: var(--radius-md);
+                  min-height: 120px;
+                "
+              >
+                <p
+                  class="card-text"
+                  style="
+                    color: var(--color-text-dark);
+                    font-family: var(--font-body);
+                    font-size: var(--fs-md);
+                    line-height: 1.6;
+                  "
+                >
+                  <span class="first-letter">T</span>he beginning of my Memorium journey. First
+                  entries, first memories.
+                </p>
+              </div>
+              <div
+                class="card-footer"
+                style="padding: var(--space-3); border-top: 1px solid var(--border)"
+              >
+                <span class="card-date" style="color: var(--color-text-muted)"
+                  >Started: February 2026</span
+                >
+              </div>
+            </article>
+
+            <!-- Journal Card 2 -->
+            <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6)">
+              <div
+                class="card-header"
+                style="
+                  background: var(--paper);
+                  padding: var(--space-5);
+                  border-radius: var(--radius-md);
+                  margin-bottom: var(--space-4);
+                "
+              >
+                <span class="card-meta" style="color: var(--color-primary)">Journal #002</span>
+              </div>
+              <div
+                class="card-body"
+                style="
+                  padding: var(--space-4);
+                  background: var(--paper);
+                  border-radius: var(--radius-md);
+                  min-height: 120px;
+                "
+              >
+                <p
+                  class="card-text"
+                  style="
+                    color: var(--color-text-dark);
+                    font-family: var(--font-body);
+                    font-size: var(--fs-md);
+                    line-height: 1.6;
+                  "
+                >
+                  Travel memories from my Paris trip. Sunsets, cafes, and stolen moments.
+                </p>
+              </div>
+              <div
+                class="card-footer"
+                style="padding: var(--space-3); border-top: 1px solid var(--border)"
+              >
+                <span class="card-date" style="color: var(--color-text-muted)"
+                  >Added: March 2026</span
+                >
+              </div>
+            </article>
+
+            <!-- Journal Card 3 -->
+            <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6)">
+              <div
+                class="card-header"
+                style="
+                  background: var(--paper);
+                  padding: var(--space-5);
+                  border-radius: var(--radius-md);
+                  margin-bottom: var(--space-4);
+                "
+              >
+                <span class="card-meta" style="color: var(--color-primary)">Journal #003</span>
+              </div>
+              <div
+                class="card-body"
+                style="
+                  padding: var(--space-4);
+                  background: var(--paper);
+                  border-radius: var(--radius-md);
+                  min-height: 120px;
+                "
+              >
+                <p
+                  class="card-text"
+                  style="
+                    color: var(--color-text-dark);
+                    font-family: var(--font-body);
+                    font-size: var(--fs-md);
+                    line-height: 1.6;
+                  "
+                >
+                  Gratitude journal. Daily moments of thankfulness. The pages that aged with me.
+                </p>
+              </div>
+              <div
+                class="card-footer"
+                style="padding: var(--space-3); border-top: 1px solid var(--border)"
+              >
+                <span class="card-date" style="color: var(--color-text-muted)">Ongoing</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="flex--center section-footer">
+            <a href="journal.html" class="btn btn-outline">+ Start New Journal</a>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- ============================================================
          FOOTER
          ============================================================ -->
     <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2026 Memorium. Crafted for memory keepers.</p>
-            <p class="footer-quote">"Some memories should grow old with you."</p>
-        </div>
+      <div class="footer-content">
+        <p>&copy; 2026 Memorium. Crafted for memory keepers.</p>
+        <p class="footer-quote">"Some memories should grow old with you."</p>
+      </div>
     </footer>
 
     <!-- ============================================================
@@ -226,53 +418,52 @@
     <script src="js/auth.js"></script>
     <script src="js/bookshelf.js"></script>
     <script src="js/app.js"></script>
-    
-    <script>
-        // Inline critical JS for immediate interactivity
-        (function() {
-            // Navbar scroll effect
-            const navbar = document.getElementById('navbar');
-            window.addEventListener('scroll', function() {
-                if (window.scrollY > 50) {
-                    navbar.classList.add('scrolled');
-                } else {
-                    navbar.classList.remove('scrolled');
-                }
-            });
-            
-            // Mobile nav toggle
-            const toggle = document.getElementById('navToggle');
-            const navLinks = document.querySelector('.nav-links');
-            let menuOpen = false;
-            
-            toggle.addEventListener('click', function() {
-                menuOpen = !menuOpen;
-                toggle.setAttribute('aria-expanded', menuOpen);
-                // Full mobile menu functionality in app.js
-            });
-            
-            // Active nav link on scroll
-            const sections = document.querySelectorAll('section[id]');
-            const navItems = document.querySelectorAll('.nav-link');
-            
-            window.addEventListener('scroll', function() {
-                let current = '';
-                sections.forEach(function(section) {
-                    const sectionTop = section.offsetTop - 100;
-                    if (window.scrollY >= sectionTop) {
-                        current = section.getAttribute('id');
-                    }
-                });
-                
-                navItems.forEach(function(link) {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === '#' + current) {
-                        link.classList.add('active');
-                    }
-                });
-            });
-        })();
-    </script>
 
-</body>
+    <script>
+      // Inline critical JS for immediate interactivity
+      (function () {
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', function () {
+          if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+          } else {
+            navbar.classList.remove('scrolled');
+          }
+        });
+
+        // Mobile nav toggle
+        const toggle = document.getElementById('navToggle');
+        const navLinks = document.querySelector('.nav-links');
+        let menuOpen = false;
+
+        toggle.addEventListener('click', function () {
+          menuOpen = !menuOpen;
+          toggle.setAttribute('aria-expanded', menuOpen);
+          // Full mobile menu functionality in app.js
+        });
+
+        // Active nav link on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const navItems = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', function () {
+          let current = '';
+          sections.forEach(function (section) {
+            const sectionTop = section.offsetTop - 100;
+            if (window.scrollY >= sectionTop) {
+              current = section.getAttribute('id');
+            }
+          });
+
+          navItems.forEach(function (link) {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+              link.classList.add('active');
+            }
+          });
+        });
+      })();
+    </script>
+  </body>
 </html>

@@ -22,7 +22,7 @@ router.post('/', (req, res, next) => {
     return next();
   }
   // Use multer single file field "image"
-  upload.single('image')(req, res, (err) => {
+  upload.single('image')(req, res, err => {
     if (err) {
       // Handle multer errors
       if (err.code === 'LIMIT_FILE_SIZE') {
