@@ -117,7 +117,7 @@
           theme: p.theme,
           decorations: [] // will load per page
         }));
-        // Load decorations per page
+        // Load decorations and images per page
         for (let np of newPages) {
           try {
             const dres = await api.listDecorations(np._apiId);
@@ -131,6 +131,18 @@
               text: d.text,
               emoji: d.emoji,
               config: d.config
+            }));
+          } catch {}
+          try {
+            const ires = await api.listImages(np._apiId);
+            np.images = (ires.data || []).map(img => ({
+              _apiId: img._id,
+              id: img._id,
+              x: img.position ? img.position.x : 24,
+              y: img.position ? img.position.y : 24,
+              rotation: img.rotation || 0,
+              url: img.url,
+              filename: img.filename
             }));
           } catch {}
         }

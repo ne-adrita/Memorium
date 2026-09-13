@@ -1,6 +1,8 @@
+const fs = require('fs');
 const Journal = require('../models/Journal');
 const Page = require('../models/Page');
 const Decoration = require('../models/Decoration');
+const Image = require('../models/Image');
 const { isValidObjectId, asyncHandler } = require('../utils/helper');
 
 const listJournals = asyncHandler(async (req, res) => {
@@ -65,10 +67,16 @@ const deleteJournal = asyncHandler(async (req, res) => {
   const pageIds = pages.map((p) => p._id);
   if (pageIds.length) {
     await Decoration.deleteMany({ page: { $in: pageIds } });
+    // Cleanup images for all pages in this journal
+    const images = await Image.find({ page: { $in: pageIds } });
+    for (const img of images) {
+      try { if (fs.existsSync(img.path)) fs.unlinkSync(img.path); } catch (_) {}
+    }
+    await Image.deleteMany({ page: { $in: pageIds } });
     await Page.deleteMany({ journal: id });
   }
   await journal.deleteOne();
-  res.json({ success: true, message: 'Journal and associated pages/decorations deleted' });
+  res.json({ success: true, message: 'Journal and associated pages/decorations/images deleted' });
 });
 
 module.exports = { listJournals, getJournal, createJournal, updateJournal, deleteJournal };

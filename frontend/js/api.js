@@ -100,6 +100,33 @@
   function deleteDecoration(id) { return request('/api/decorations/' + encodeURIComponent(id), { method: 'DELETE' }); }
   function getDecoration(id) { return request('/api/decorations/' + encodeURIComponent(id)); }
 
+  // Images
+  async function uploadImage(pageId, file, position = {}) {
+    const url = API_BASE + '/api/pages/' + encodeURIComponent(pageId) + '/images';
+    const token = getToken();
+    const headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const fd = new FormData();
+    fd.append('image', file);
+    if (position.x !== undefined) fd.append('x', String(position.x));
+    if (position.y !== undefined) fd.append('y', String(position.y));
+    const res = await fetch(url, { method: 'POST', headers, body: fd });
+    let data; const text = await res.text(); try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    if (res.status === 401) {
+      clearAuth();
+      if (!window.location.pathname.includes('login.html')) window.dispatchEvent(new CustomEvent('memorium:unauthorized'));
+    }
+    if (!res.ok) {
+      const msg = (data && data.message) ? data.message : `Upload failed (${res.status})`;
+      const err = new Error(msg); err.status = res.status; err.data = data; throw err;
+    }
+    return data;
+  }
+  function listImages(pageId) { return request('/api/pages/' + encodeURIComponent(pageId) + '/images'); }
+  function getImageUrl(id) { return API_BASE + '/api/images/' + encodeURIComponent(id); }
+  function deleteImage(id) { return request('/api/images/' + encodeURIComponent(id), { method: 'DELETE' }); }
+  function updateImage(id, data) { return request('/api/images/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(data) }); }
+
   // Migration helper: detect local journal data
   function getLocalNotebookState() {
     try {
@@ -139,6 +166,7 @@
     listJournals, getJournal, createJournal, updateJournal, deleteJournal,
     listPages, getPage, createPage, updatePage, deletePage,
     listDecorations, createDecoration, updateDecoration, deleteDecoration, getDecoration,
+    uploadImage, listImages, getImageUrl, deleteImage, updateImage,
     getLocalNotebookState, migrateLocalToBackend
   };
 })();

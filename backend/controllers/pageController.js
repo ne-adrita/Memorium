@@ -1,6 +1,8 @@
+const fs = require('fs');
 const Page = require('../models/Page');
 const Journal = require('../models/Journal');
 const Decoration = require('../models/Decoration');
+const Image = require('../models/Image');
 const { isValidObjectId, asyncHandler } = require('../utils/helper');
 
 async function ensureJournalOwnership(journalId, userId) {
@@ -112,6 +114,12 @@ const deletePage = asyncHandler(async (req, res) => {
   const { error, page } = await ensurePageOwnership(id, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
   await Decoration.deleteMany({ page: id });
+  // Cleanup images for this page
+  const images = await Image.find({ page: id });
+  for (const img of images) {
+    try { if (fs.existsSync(img.path)) fs.unlinkSync(img.path); } catch (_) {}
+  }
+  await Image.deleteMany({ page: id });
   await page.deleteOne();
   res.json({ success: true, message: 'Page and decorations deleted' });
 });

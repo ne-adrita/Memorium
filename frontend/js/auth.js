@@ -52,10 +52,12 @@
   function updateNavbar() {
     const isAuthed = window.MemoriumAPI && window.MemoriumAPI.isAuthed();
     const user = window.MemoriumAPI ? window.MemoriumAPI.getUser() : null;
-    // Find nav-actions or create logout button
     const actions = document.querySelector('.nav-actions');
     if (!actions) return;
-    // Remove existing auth buttons to avoid duplicates
+    // Toggle existing unauth links (login/register) visibility
+    const unauthLinks = actions.querySelectorAll('a[href="login.html"], a[href="register.html"]');
+    unauthLinks.forEach(a => { a.style.display = isAuthed ? 'none' : ''; });
+
     const existingLogout = document.getElementById('memorium-logout');
     const existingLogin = document.getElementById('memorium-login-link');
     if (isAuthed) {
@@ -69,9 +71,14 @@
           window.MemoriumAPI.logout();
         });
         actions.appendChild(btn);
+      } else {
+        // update name in case user changed
+        existingLogout.textContent = 'Log out' + (user ? ' (' + user.name.split(' ')[0] + ')' : '');
       }
     } else {
       if (existingLogout) existingLogout.remove();
+      // ensure unauth links visible
+      unauthLinks.forEach(a => { a.style.display = ''; });
     }
 
     // If on protected pages without auth, show hint (do not auto-redirect from public pages like index)
@@ -110,6 +117,27 @@
       else wireForm(form.id||'', 'login');
     }
     updateNavbar();
+
+    // Validate token once per page load via /api/auth/me (no repeat)
+    if (window.MemoriumAPI && window.MemoriumAPI.isAuthed()) {
+      window.MemoriumAPI.getMe()
+        .then(res => {
+          // update stored user if different
+          try {
+            const stored = window.MemoriumAPI.getUser();
+            if (stored && res.data && res.data.user && stored.name !== res.data.user.name) {
+              localStorage.setItem('memorium-user', JSON.stringify(res.data.user));
+              updateNavbar();
+            }
+          } catch {}
+        })
+        .catch(err => {
+          if (err.status === 401) {
+            // token expired/invalid -> already cleared by api.js, update ui
+            updateNavbar();
+          }
+        });
+    }
 
     // Handle 401 event from api.js
     window.addEventListener('memorium:unauthorized', () => {

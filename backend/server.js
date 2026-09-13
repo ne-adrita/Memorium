@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const journalRoutes = require('./routes/journalRoutes');
 const pageRoutes = require('./routes/pageRoutes');
 const decorationRoutes = require('./routes/decorationRoutes');
+const imageRoutes = require('./routes/imageRoutes');
 const errorMiddleware = require('./middleware/errorMiddleware');
 
 const app = express();
@@ -37,6 +38,8 @@ app.use('/api/journals/:journalId/pages', pageRoutes);
 app.use('/api/pages', pageRoutes);
 app.use('/api/pages/:pageId/decorations', decorationRoutes);
 app.use('/api/decorations', decorationRoutes);
+app.use('/api/pages/:pageId/images', imageRoutes);
+app.use('/api/images', imageRoutes);
 
 // 404 for unknown API routes
 app.use((req, res) => {

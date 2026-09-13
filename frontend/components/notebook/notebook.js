@@ -353,6 +353,129 @@
         // hide empty state if decorations exist
         const emptyState = document.querySelector('.page-empty-state');
         if (emptyState) emptyState.style.display = page.decorations.length ? 'none' : '';
+        // also render images
+        renderImages();
+    }
+
+    function renderImages() {
+        const page = getCurrentPage();
+        if (!page) return;
+        const targetPageEl = state.currentPageIndex === 0 ? leftPageEl : rightPageEl;
+        if (!targetPageEl) return;
+        const layer = targetPageEl.querySelector('.page-decoration-layer');
+        if (!layer) return;
+        // Remove old image nodes
+        layer.querySelectorAll('.decoration--image').forEach(n=>n.remove());
+        // If in API mode, fetch images via API and render
+        if (window.MemoriumAPI && window.MemoriumAPI.isAuthed() && page._apiId) {
+            window.MemoriumAPI.listImages(page._apiId).then(res=>{
+                const images = res.data || [];
+                // Store in state for drag persistence (not localStorage for binary, just refs)
+                page.images = images.map(img=>({
+                    _apiId: img._id, id: img._id, filename: img.filename,
+                    x: img.position ? img.position.x : 24,
+                    y: img.position ? img.position.y : 24,
+                    rotation: img.rotation || 0,
+                    url: img.url
+                }));
+                images.forEach(img=>{
+                    const el = document.createElement('div');
+                    el.className = 'decoration decoration--image';
+                    el.dataset.id = img._id;
+                    el.style.position='absolute';
+                    el.style.left=(img.position?img.position.x:24)+'px';
+                    el.style.top=(img.position?img.position.y:24)+'px';
+                    el.style.transform=`rotate(${img.rotation||0}deg)`;
+                    el.style.cursor='grab';
+                    el.style.pointerEvents='auto';
+                    el.style.maxWidth='180px';
+                    el.style.boxShadow='2px 4px 10px rgba(0,0,0,.15)';
+                    el.style.border='1px solid #DDD1BF';
+                    el.style.background='#FFF';
+                    el.style.padding='4px';
+                    // Fetch image with auth and create blob URL
+                    const token = window.MemoriumAPI.getToken();
+                    fetch(window.MemoriumAPI.API_BASE + '/api/images/' + img._id, { headers: token?{Authorization:'Bearer '+token}:{}})
+                        .then(r=> r.ok ? r.blob() : Promise.reject())
+                        .then(blob=>{
+                            const url = URL.createObjectURL(blob);
+                            const im = document.createElement('img');
+                            im.src=url;
+                            im.style.display='block';
+                            im.style.maxWidth='170px';
+                            im.style.maxHeight='170px';
+                            im.style.pointerEvents='none';
+                            el.appendChild(im);
+                        }).catch(()=>{ el.textContent='(image unavailable)'; });
+                    const rm = document.createElement('button');
+                    rm.type='button'; rm.textContent='✕'; rm.title='Delete image';
+                    rm.style.cssText='position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:11px;cursor:pointer';
+                    rm.addEventListener('click', async (e)=>{ e.stopPropagation(); try{ await window.MemoriumAPI.deleteImage(img._id); renderImages(); }catch(err){ alert(err.message);} });
+                    el.appendChild(rm);
+                    // draggable
+                    let deco={x: img.position?img.position.x:24, y: img.position?img.position.y:24, rot: img.rotation||0, _apiId: img._id, id: img._id};
+                    makeDraggableForImage(el, deco);
+                    layer.appendChild(el);
+                    layer.style.pointerEvents='auto';
+                });
+                if (images.length) {
+                    const emptyState = document.querySelector('.page-empty-state');
+                    if (emptyState) emptyState.style.display='none';
+                }
+            }).catch(()=>{});
+            return;
+        }
+        // Local fallback: render images stored in page.images (from localStorage)
+        if (page.images && page.images.length) {
+            page.images.forEach(img=>{
+                const el=document.createElement('div');
+                el.className='decoration decoration--image';
+                el.dataset.id=img.id||img._apiId;
+                el.style.position='absolute'; el.style.left=(img.x||24)+'px'; el.style.top=(img.y||24)+'px';
+                el.style.transform=`rotate(${img.rotation||0}deg)`; el.style.cursor='grab'; el.style.maxWidth='180px';
+                el.style.boxShadow='2px 4px 10px rgba(0,0,0,.15)'; el.style.border='1px solid #DDD1BF'; el.style.background='#FFF'; el.style.padding='4px';
+                if (img.src) {
+                    const im=document.createElement('img'); im.src=img.src; im.style.maxWidth='170px'; im.style.display='block'; el.appendChild(im);
+                } else if (img.url) {
+                    el.textContent='[image]';
+                }
+                const rm=document.createElement('button'); rm.type='button'; rm.textContent='✕'; rm.style.cssText='position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:11px;cursor:pointer';
+                rm.addEventListener('click',()=>{ const idx=page.images.indexOf(img); if(idx!==-1){ page.images.splice(idx,1); saveState(); renderImages(); }});
+                el.appendChild(rm);
+                makeDraggable(el, img);
+                layer.appendChild(el);
+            });
+            layer.style.pointerEvents='auto';
+        }
+    }
+
+    function makeDraggableForImage(el, deco) {
+        let startX=0, startY=0, origX=0, origY=0, dragging=false;
+        el.addEventListener('pointerdown', e=>{
+            if (e.target.tagName==='BUTTON') return;
+            dragging=true; el.setPointerCapture(e.pointerId);
+            startX=e.clientX; startY=e.clientY; origX=deco.x; origY=deco.y;
+            el.style.cursor='grabbing'; el.style.zIndex='5';
+        });
+        el.addEventListener('pointermove', e=>{
+            if(!dragging) return;
+            const dx=e.clientX-startX, dy=e.clientY-startY;
+            deco.x=Math.max(0, Math.min(260, origX+dx));
+            deco.y=Math.max(0, Math.min(420, origY+dy));
+            el.style.left=deco.x+'px'; el.style.top=deco.y+'px';
+        });
+        const end=(e)=>{
+            if(!dragging) return; dragging=false; el.style.cursor='grab'; el.style.zIndex='';
+            try{ el.releasePointerCapture(e.pointerId);}catch(_){}
+            if (window.MemoriumAPI && deco._apiId && window.MemoriumAPI.updateImage) {
+                window.MemoriumAPI.updateImage(deco._apiId, { position: { x: deco.x, y: deco.y }, rotation: deco.rot }).catch(()=>{});
+            } else {
+                // fallback local
+                try { localStorage.setItem('memorium-state-v2', JSON.stringify(state)); } catch {}
+            }
+        };
+        el.addEventListener('pointerup', end);
+        el.addEventListener('pointercancel', end);
     }
 
     function makeDraggable(el, deco) {
@@ -409,8 +532,61 @@
             { label:'Sticker', type:'sticker' },
             { label:'Paper', type:'paper' },
             { label:'Flower', type:'flower' },
+            { label:'Image', type:'image' },
             { label:'+ Page', type:'newpage' }
         ];
+        // Hidden file input for image upload
+        let fileInput = document.getElementById('memorium-image-input');
+        if (!fileInput) {
+            fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'memorium-image-input';
+            fileInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+            fileInput.addEventListener('change', async () => {
+                const file = fileInput.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { alert('Image too large. Max 5 MB'); fileInput.value=''; return; }
+                if (!['image/jpeg','image/jpg','image/png','image/webp','image/gif'].includes(file.type)) { alert('Unsupported image type'); fileInput.value=''; return; }
+                // Use API if available
+                if (window.MemoriumAPI && window.MemoriumAPI.isAuthed()) {
+                    const state = window.MemoriumNotebook ? window.MemoriumNotebook.getState() : null;
+                    const cur = state ? state.pages[state.currentPageIndex] : null;
+                    const journalId = localStorage.getItem('memorium-current-journal');
+                    // Need pageId - try to get from state
+                    if (cur && cur._apiId) {
+                        try {
+                            const res = await window.MemoriumAPI.uploadImage(cur._apiId, file, { x: 30, y: 30 });
+                            // Add to local state for immediate display
+                            if (cur) {
+                                if (!cur.images) cur.images = [];
+                                cur.images.push({ _apiId: res.data._id, id: res.data._id, filename: res.data.filename, url: res.data.url, x: res.data.position.x, y: res.data.position.y, rotation: res.data.rotation });
+                                try { localStorage.setItem('memorium-state-v2', JSON.stringify(state)); } catch {}
+                                renderImages();
+                            }
+                        } catch (e) { alert(e.message || 'Upload failed'); }
+                    } else {
+                        alert('Please open a journal first');
+                    }
+                } else {
+                    // Fallback local preview (no backend)
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const deco = addDecoration('paper', { text: file.name });
+                        // Replace paper text with image preview local
+                        if (deco) {
+                            deco.type = 'image-local';
+                            deco.src = ev.target.result;
+                            renderDecorations();
+                            renderImages();
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+                fileInput.value = '';
+            });
+        }
         buttons.forEach(b=>{
             const btn = document.createElement('button');
             btn.type='button'; btn.textContent=b.label;
@@ -418,6 +594,7 @@
             btn.style.cssText = 'padding:.4rem .85rem;border-radius:999px;border:1px solid rgba(107,79,59,.15);background:var(--paper);font-family:var(--heading-font);font-size:.82rem;cursor:pointer;transition:all .15s';
             btn.addEventListener('click', ()=>{
                 if (b.type==='newpage') createPage();
+                else if (b.type==='image') fileInput.click();
                 else addDecoration(b.type);
             });
             btn.addEventListener('mouseenter', ()=>btn.style.transform='translateY(-1px)');
