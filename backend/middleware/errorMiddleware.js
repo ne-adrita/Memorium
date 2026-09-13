@@ -27,7 +27,28 @@ function errorMiddleware(err, req, res, _next) {
     message = `Duplicate value for ${field}`;
   }
 
-  // Don't leak stack in production
+  // Handle CORS rejection specifically (origin callback error)
+  if (message === 'Not allowed by CORS') {
+    status = 403;
+  }
+  // Hide internal details in production
+  if (status === 500 && process.env.NODE_ENV === 'production') {
+    // Allow known safe messages through (CORS)
+    const safePatterns = ['Not allowed by CORS'];
+    const isSafe = safePatterns.some((p) => message.includes(p));
+    if (!isSafe) {
+      const isKnownSafe = err.statusCode && err.statusCode < 500;
+      if (!isKnownSafe) message = 'Internal server error';
+    }
+  }
+  // Strip any accidental secret leakage
+  if (/mongo/i.test(message) && message.includes('://')) {
+    message = 'Database error';
+  }
+  if (/JWT_SECRET/i.test(message)) {
+    message = 'Server configuration error';
+  }
+
   const response = { success: false, message };
   if (process.env.NODE_ENV !== 'production' && err.stack) {
     // only include stack when explicitly debugging; still not credentials

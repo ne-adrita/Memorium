@@ -2,9 +2,16 @@
    Memorium — Frontend API layer (plain JS)
    Centralized fetch, base URL, JWT, error handling.
    No secrets, no Mongo URI, no JWT_SECRET.
+   Config is loaded from js/config.js (window.__MEMORIUM_API_URL)
    ============================================================ */
 (function () {
-  const API_BASE = window.__MEMORIUM_API_URL || 'http://localhost:3000';
+  // config.js sets window.__MEMORIUM_API_URL; fallback for backwards compat
+  const rawBase = (typeof window.__MEMORIUM_API_URL === 'string' && window.__MEMORIUM_API_URL.trim())
+    ? window.__MEMORIUM_API_URL.trim()
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:3000'
+      : window.location.origin);
+  const API_BASE = rawBase.replace(/\/$/, '');
   const TOKEN_KEY = 'memorium-token';
   const USER_KEY = 'memorium-user';
 

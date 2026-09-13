@@ -1,0 +1,3 @@
+# Netlify redirects — fallback for SPA-style deep links if frontend is served statically
+# Keeps plain HTML files accessible; unknown paths go to index.html
+/*    /index.html   200

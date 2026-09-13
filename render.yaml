@@ -1,0 +1,29 @@
+# Render deployment config for Memorium backend
+# Docs: https://render.com/docs/blueprint-spec
+# This file is optional — you can also deploy manually via Render dashboard:
+#   New Web Service -> Connect repo -> Root Directory: backend -> Build: npm install -> Start: npm start
+services:
+  - type: web
+    name: memorium-api
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        sync: false
+      # Optional: set SERVE_FRONTEND=true if you want this service to also serve the frontend static files
+      # - key: SERVE_FRONTEND
+      #   value: true
