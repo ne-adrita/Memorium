@@ -514,6 +514,30 @@
     if (!area || area._penWritingAttached) return;
     area._penWritingAttached = true;
 
+    // Ensure writing area receives pointer events and doesn't trigger page-turn
+    area.style.pointerEvents = 'auto';
+    area.style.position = 'relative';
+    area.style.zIndex = '5';
+    // Ensure ancestors don't block pointer events (notebook-page-content had pointer-events:none in some CSS)
+    try {
+      const pageContent = area.closest('.notebook-page-content');
+      if (pageContent) pageContent.style.pointerEvents = 'auto';
+      const pageBody = area.closest('.page-body');
+      if (pageBody) pageBody.style.pointerEvents = 'auto';
+      const page = area.closest('.notebook-page');
+      if (page) page.style.pointerEvents = 'auto';
+    } catch (_) {}
+    // Stop propagation so notebook swipe/page-turn doesn't intercept clicks in writing area
+    area.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+    });
+    area.addEventListener('pointerup', e => {
+      e.stopPropagation();
+    });
+    area.addEventListener('click', e => {
+      e.stopPropagation();
+    });
+
     // Ensure area has pen indicator for accessibility
     area.addEventListener('focus', () => {
       const pen = getSelectedPenSafe();

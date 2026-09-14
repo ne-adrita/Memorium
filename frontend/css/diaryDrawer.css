@@ -1,0 +1,341 @@
+/* ============================================================
+   MEMORIUM — Diary Tools Drawer (11U)
+   Diary-first: diary centered, tools hidden behind ⋮ drawer
+   Vintage paper/leather, no framework
+   ============================================================ */
+
+/* Trigger — small vintage three-dot button */
+.memorium-tools-trigger {
+  position: fixed;
+  top: 84px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #FFFEFB 0%, #FFF8F0 100%);
+  border: 1.5px solid var(--border, #DDD1BF);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+  color: var(--text-dark, #2F241F);
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 2px;
+  text-align: center;
+  cursor: pointer;
+  z-index: 850;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  display: grid;
+  place-items: center;
+}
+.memorium-tools-trigger:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-gold, #C9A227);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.08);
+}
+.memorium-tools-trigger:active { transform: scale(0.96); }
+.memorium-tools-trigger:focus-visible {
+  outline: 2px solid var(--accent-gold, #C9A227);
+  outline-offset: 3px;
+}
+.memorium-tools-trigger[aria-expanded="true"] {
+  background: var(--primary, #6B4F3B);
+  color: #FFF8F0;
+  border-color: var(--primary-dark, #4A3428);
+}
+
+/* Overlay */
+.memorium-tools-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43,33,27,0.32);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 840;
+  opacity: 1;
+  transition: opacity 0.22s ease;
+}
+.memorium-tools-overlay[hidden] {
+  display: none !important;
+  opacity: 0;
+}
+
+/* Drawer */
+.memorium-tools-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  max-width: 92vw;
+  height: 100vh;
+  height: 100dvh;
+  background: linear-gradient(180deg, #FFFEFB 0%, #FFF8F0 100%);
+  border-left: 1.5px solid var(--border, #DDD1BF);
+  box-shadow: -8px 0 32px rgba(0,0,0,0.18), -2px 0 8px rgba(0,0,0,0.08);
+  z-index: 845;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.2,0.8,0.2,1);
+  overflow: hidden;
+}
+.memorium-tools-drawer.is-open {
+  transform: translateX(0);
+}
+.memorium-tools-drawer[aria-hidden="true"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+.memorium-tools-drawer[aria-hidden="false"] {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Header */
+.memorium-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.9rem 1.1rem;
+  border-bottom: 1px solid rgba(107,79,59,0.1);
+  background: rgba(248,241,231,0.6);
+  flex-shrink: 0;
+}
+.memorium-drawer-title {
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-dark, #2F241F);
+  margin: 0;
+}
+.memorium-drawer-subtitle {
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted, #9B8E84);
+  margin: 2px 0 0;
+}
+.memorium-drawer-close {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border, #DDD1BF);
+  background: #FFFEFB;
+  font-size: 14px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.18s ease;
+}
+.memorium-drawer-close:hover {
+  border-color: var(--accent-gold, #C9A227);
+  color: var(--accent-gold, #C9A227);
+}
+.memorium-drawer-close:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+/* Body scrollable */
+.memorium-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.6rem 0 1rem;
+  scrollbar-width: thin;
+}
+.memorium-drawer-body::-webkit-scrollbar { width: 6px; }
+.memorium-drawer-body::-webkit-scrollbar-thumb { background: var(--border, #DDD1BF); border-radius: 999px; }
+
+/* Sections — accordion */
+.memorium-drawer-section {
+  border-bottom: 1px solid rgba(107,79,59,0.08);
+}
+.memorium-drawer-section:last-child { border-bottom: none; }
+.drawer-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: none;
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-dark, #2F241F);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.drawer-section-header:hover { background: rgba(248,241,231,0.55); }
+.drawer-section-header:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: -2px; }
+.drawer-section-chevron {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+.drawer-section-header[aria-expanded="true"] .drawer-section-chevron { transform: rotate(90deg); opacity: 0.8; }
+.drawer-section-content {
+  padding: 0 0.75rem 0.9rem;
+}
+.drawer-section-content[hidden] { display: none !important; }
+
+/* Inside drawer, tool panels should fit narrow width and lose outer margins/shadows */
+.memorium-tools-drawer .theme-family-system,
+.memorium-tools-drawer .pen-holder-system,
+.memorium-tools-drawer .paper-system,
+.memorium-tools-drawer .sound-system,
+.memorium-tools-drawer .ambient-bar,
+.memorium-tools-drawer .decoration-bar,
+.memorium-tools-drawer .writing-tools-bar {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0.4rem 0 !important;
+}
+.memorium-tools-drawer .theme-family-system::before,
+.memorium-tools-drawer .theme-family-system::after,
+.memorium-tools-drawer .pen-holder-system::before,
+.memorium-tools-drawer .pen-holder-system::after,
+.memorium-tools-drawer .paper-system::before,
+.memorium-tools-drawer .paper-system::after,
+.memorium-tools-drawer .sound-system::before,
+.memorium-tools-drawer .sound-system::after {
+  display: none !important;
+}
+.memorium-tools-drawer .ambient-bar {
+  border-radius: 12px !important;
+  border: 1px solid rgba(107,79,59,0.1) !important;
+  background: rgba(248,241,231,0.9) !important;
+  margin: 0 !important;
+  padding: 0.6rem 0.7rem !important;
+}
+.memorium-tools-drawer .decoration-bar {
+  background: rgba(248,241,231,0.92) !important;
+  border: 1px solid rgba(107,79,59,0.1) !important;
+  border-radius: 12px !important;
+  padding: 0.6rem 0.7rem !important;
+}
+.memorium-tools-drawer .writing-tools-bar {
+  max-width: 100% !important;
+  border-radius: 12px !important;
+}
+
+/* Diary Details custom */
+.drawer-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.drawer-details-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.drawer-details-label {
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted, #6E6259);
+}
+.drawer-details-input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border, #DDD1BF);
+  border-radius: 8px;
+  background: #FFFEFB;
+  font-family: var(--body-font, 'Lora', serif);
+  font-size: 0.85rem;
+  color: var(--text-dark, #2F241F);
+}
+.drawer-details-input:focus { outline: 2px solid var(--accent-gold); outline-offset: 1px; border-color: var(--accent-gold); }
+.drawer-mood-grid, .drawer-weather-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.drawer-mood-btn, .drawer-weather-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border, #DDD1BF);
+  background: #FFFEFB;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.drawer-mood-btn.active, .drawer-weather-btn.active {
+  border-color: var(--accent-gold, #C9A227);
+  background: rgba(201,162,39,0.08);
+  box-shadow: 0 0 0 2px rgba(201,162,39,0.12);
+}
+.drawer-mood-btn:focus-visible, .drawer-weather-btn:focus-visible {
+  outline: 2px solid var(--accent-gold); outline-offset: 2px;
+}
+
+/* Diary-first: when drawer closed, ensure notebook is dominant — add subtle desk breathing room */
+#notebook-section {
+  position: relative;
+}
+
+/* Hide any leftover large empty tool sections that might remain outside drawer */
+body.memorium-drawer-active .theme-family-system,
+body.memorium-drawer-active .pen-holder-system,
+body.memorium-drawer-active .paper-system,
+body.memorium-drawer-active .sound-system,
+body.memorium-drawer-active .ambient-bar,
+body.memorium-drawer-active .decoration-bar,
+body.memorium-drawer-active .writing-tools-bar {
+  /* These will have been moved; if any remain outside, hide them visually but keep for screen readers? No, hide completely */
+}
+body.memorium-drawer-ready .theme-family-system,
+body.memorium-drawer-ready .pen-holder-system,
+body.memorium-drawer-ready .paper-system,
+body.memorium-drawer-ready .sound-system,
+body.memorium-drawer-ready .ambient-bar,
+body.memorium-drawer-ready .decoration-bar,
+body.memorium-drawer-ready .writing-tools-bar {
+  /* After collection, any that remain outside drawer should be hidden — we handle via JS moving, but CSS fallback */
+}
+
+/* Mobile: drawer becomes bottom sheet */
+@media (max-width: 768px) {
+  .memorium-tools-trigger {
+    top: auto;
+    bottom: 18px;
+    right: 14px;
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .memorium-tools-drawer {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 72vh;
+    height: 72dvh;
+    border-left: none;
+    border-top: 1.5px solid var(--border, #DDD1BF);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.18);
+  }
+  .memorium-tools-drawer.is-open { transform: translateY(0); }
+  .memorium-drawer-body { padding-bottom: 1.5rem; }
+}
+@media (max-width: 480px) {
+  .memorium-tools-drawer { height: 78vh; }
+}
