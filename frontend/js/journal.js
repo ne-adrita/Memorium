@@ -109,6 +109,9 @@
             const resolve = window.MemoriumThemeConfig
               ? window.MemoriumThemeConfig.resolveThemeId
               : t => t || 'classic-leather';
+            const resolvePaper = window.MemoriumPaperConfig
+              ? window.MemoriumPaperConfig.normalizePaper
+              : p => p || 'plain';
             const journalTheme =
               (await api
                 .getJournal(journalId)
@@ -119,30 +122,43 @@
                   localStorage.getItem('memorium-theme') ||
                   'classic-leather'
               );
+            const journalPaper =
+              (await api
+                .getJournal(journalId)
+                .then(r => r.data && r.data.paper)
+                .catch(() => null)) ||
+              resolvePaper(localStorage.getItem('memorium_paper') || 'plain');
             const p1 = await api.createPage(journalId, {
               pageNumber: 1,
               title: 'Page 1',
               content: '<p><span class="page-first-letter">D</span>ear Diary…</p>',
               theme: resolve(journalTheme),
+              paper: resolvePaper(journalPaper),
             });
             const p2 = await api.createPage(journalId, {
               pageNumber: 2,
               title: 'Page 2',
               content: '',
               theme: resolve(journalTheme),
+              paper: resolvePaper(journalPaper),
             });
             apiPages = [p1.data, p2.data];
           }
         }
         // Fetch journal-level theme and apply globally (DB is source of truth per spec)
         let journalThemeId = null;
+        let journalPaperId = null;
         try {
           const jres = await api.getJournal(journalId);
           journalThemeId = jres.data && jres.data.themeId;
+          journalPaperId = jres.data && jres.data.paper;
         } catch (_) {}
         const resolveTheme = window.MemoriumThemeConfig
           ? window.MemoriumThemeConfig.resolveThemeId
           : t => t || 'classic-leather';
+        const resolvePaper2 = window.MemoriumPaperConfig
+          ? window.MemoriumPaperConfig.normalizePaper
+          : p => p || 'plain';
         if (
           journalThemeId &&
           window.MemoriumThemeConfig &&
@@ -171,6 +187,30 @@
             } catch (_) {}
           }
         }
+        // Journal paper
+        const isValidPaper = window.MemoriumPaperConfig
+          ? window.MemoriumPaperConfig.isValidPaper
+          : p => ['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'].includes(p);
+        if (journalPaperId && isValidPaper(journalPaperId)) {
+          const normP = resolvePaper2(journalPaperId);
+          try {
+            localStorage.setItem('memorium_paper', normP);
+          } catch (_) {}
+          try {
+            localStorage.setItem('memorium_journal_paper_' + journalId, normP);
+          } catch (_) {}
+          if (window.MemoriumPaper && window.MemoriumPaper.applyPaper) {
+            window.MemoriumPaper.applyPaper(normP, { persistJournal: false, persistPage: false });
+          }
+        } else if (!journalPaperId) {
+          const localPaper = resolvePaper2(localStorage.getItem('memorium_paper') || 'plain');
+          if (localPaper) {
+            journalPaperId = localPaper;
+            try {
+              await api.updateJournal(journalId, { paper: localPaper });
+            } catch (_) {}
+          }
+        }
         // Convert API pages to local state shape
         const newPages = apiPages.map(p => ({
           _apiId: p._id,
@@ -179,6 +219,7 @@
           title: p.title,
           content: p.content,
           theme: p.theme || journalThemeId || 'classic-leather',
+          paper: p.paper || journalPaperId || 'plain',
           decorations: [], // will load per page
         }));
         // Load decorations and images per page
@@ -250,7 +291,7 @@
             document.querySelector(`.notebook-page[data-page="${cur.id}"] .page-writing-area`) ||
             document.querySelector('.page-writing-area');
           const content = area ? area.innerHTML : cur.content;
-          await api.updatePage(cur._apiId, { content, theme: cur.theme });
+          await api.updatePage(cur._apiId, { content, theme: cur.theme, paper: cur.paper });
           cur.content = content;
           showStatus('Saved to cloud', false);
           if (window.MemoriumUtils && Date.now() - lastToast > 4000) {
@@ -280,7 +321,7 @@
             document.querySelector('.page-writing-area');
           const content = area ? area.innerHTML : cur2.content;
           api
-            .updatePage(cur2._apiId, { content, theme: cur2.theme })
+            .updatePage(cur2._apiId, { content, theme: cur2.theme, paper: cur2.paper })
             .then(() => {
               showStatus('Saved', false);
               if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved', 'success');
@@ -348,16 +389,25 @@
           const resolve2 = window.MemoriumThemeConfig
             ? window.MemoriumThemeConfig.resolveThemeId
             : t => t || 'classic-leather';
+          const resolvePaper = window.MemoriumPaperConfig
+            ? window.MemoriumPaperConfig.normalizePaper
+            : p => p || 'plain';
           const curTheme = resolve2(
             state.pages[state.currentPageIndex]?.theme ||
               localStorage.getItem('memorium_theme') ||
               'classic-leather'
+          );
+          const curPaper = resolvePaper(
+            state.pages[state.currentPageIndex]?.paper ||
+              localStorage.getItem('memorium_paper') ||
+              'plain'
           );
           const res = await api.createPage(journalId, {
             pageNumber: nextNum,
             title: 'Page ' + nextNum,
             content: '<p><span class="page-first-letter">D</span>ear Diary…</p>',
             theme: curTheme,
+            paper: curPaper,
           });
           // reload from API to get correct ordering
           await loadFromAPI();
@@ -392,6 +442,27 @@
         await api.updatePage(cur._apiId, { theme });
       } catch (err) {
         console.warn('page theme save failed', err);
+      }
+    });
+
+    // Paper changes — page + journal level (11F)
+    window.addEventListener('memorium:paperchange', async e => {
+      const paper = e.detail && e.detail.paper;
+      if (!paper) return;
+      try {
+        if (window.MemoriumAPI && window.MemoriumAPI.isAuthed()) {
+          await api.updateJournal(journalId, { paper });
+        }
+      } catch (err) {
+        console.warn('journal paper save failed', err);
+      }
+      const state = nb.getState();
+      const cur = state.pages[state.currentPageIndex];
+      if (!cur || !cur._apiId) return;
+      try {
+        await api.updatePage(cur._apiId, { paper });
+      } catch (err) {
+        console.warn('page paper save failed', err);
       }
     });
 

@@ -7,23 +7,30 @@
   'use strict';
 
   const STORAGE_KEY = 'memorium-ambience';
-  const DEFAULTS = { grain: true, warmLight: true, soundEnabled: false, sound: 'rain' };
+  const DEFAULTS = { grain: true, warmLight: true };
 
   function loadPrefs() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? Object.assign({}, DEFAULTS, JSON.parse(raw)) : Object.assign({}, DEFAULTS);
+      const parsed = raw ? JSON.parse(raw) : {};
+      // Migrate old sound fields out — sound now handled by MemoriumSound (single source of truth)
+      const prefs = Object.assign({}, DEFAULTS, parsed);
+      if ('soundEnabled' in prefs) delete prefs.soundEnabled;
+      if ('sound' in prefs) delete prefs.sound;
+      return prefs;
     } catch (_) {
       return Object.assign({}, DEFAULTS);
     }
   }
   function savePrefs(prefs) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+      const toSave = { grain: !!prefs.grain, warmLight: !!prefs.warmLight };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     } catch (_) {}
   }
 
   const prefs = loadPrefs();
+  // Sound is now centralized in MemoriumSound — keep shim for backward compat
   let audioEl = null;
 
   function applyVisualAmbience() {
@@ -35,55 +42,44 @@
     document.body.classList.toggle('warm-ambience', !!prefs.warmLight);
   }
 
+  // Legacy sound shims — delegate to MemoriumSound if available, else no-op
   function ensureAudio() {
+    if (window.MemoriumSound) return null;
     if (audioEl) return audioEl;
     const existing = document.getElementById('memorium-ambient-audio');
     if (existing) {
       audioEl = existing;
       return audioEl;
     }
-    audioEl = document.createElement('audio');
-    audioEl.id = 'memorium-ambient-audio';
-    audioEl.loop = true;
-    audioEl.preload = 'none';
-    audioEl.volume = 0.35;
-    document.body.appendChild(audioEl);
-    return audioEl;
+    return null;
   }
 
   function setSound(soundName) {
-    prefs.sound = soundName;
-    if (prefs.soundEnabled) playSound();
-    savePrefs(prefs);
-    updateControls();
+    if (window.MemoriumSound && window.MemoriumSound.playAmbient) {
+      window.MemoriumSound.playAmbient(soundName);
+      return;
+    }
+    // fallback no-op (sound centralized, this shim kept for tests)
   }
 
   function playSound() {
-    if (!prefs.soundEnabled) return;
-    const el = ensureAudio();
-    // map sound name to file - files exist but may be empty; fail gracefully
-    const src = `audio/${prefs.sound}.mp3`;
-    if (el.getAttribute('src') !== src) el.src = src;
-    const p = el.play();
-    if (p && p.catch)
-      p.catch(() => {
-        // Autoplay blocked or file empty - show subtle hint, don't loop error
-        el.pause();
-        const btn = document.querySelector('[data-ambience="sound"]');
-        if (btn) btn.title = 'Sound unavailable';
-      });
+    // delegated — ambient audio now managed by MemoriumSound.init()/playAmbient
   }
 
   function pauseSound() {
-    if (audioEl) audioEl.pause();
+    if (window.MemoriumSound && window.MemoriumSound.stopAmbient) {
+      window.MemoriumSound.stopAmbient();
+    }
   }
 
   function toggleSound() {
-    prefs.soundEnabled = !prefs.soundEnabled;
-    savePrefs(prefs);
-    if (prefs.soundEnabled) playSound();
-    else pauseSound();
-    updateControls();
+    if (window.MemoriumSound) {
+      const st = window.MemoriumSound.getState();
+      if (st && st.isAmbientPlaying) window.MemoriumSound.stopAmbient();
+      else if (st && st.selectedAmbient) window.MemoriumSound.playAmbient(st.selectedAmbient);
+      else window.MemoriumSound.playAmbient('rain');
+      return;
+    }
   }
 
   function toggleGrain() {
@@ -108,15 +104,20 @@
       b.setAttribute('aria-pressed', String(!!prefs.warmLight));
       b.classList.toggle('active', !!prefs.warmLight);
     });
-    document.querySelectorAll('[data-ambience="sound"]').forEach(b => {
-      b.setAttribute('aria-pressed', String(!!prefs.soundEnabled));
-      b.classList.toggle('active', !!prefs.soundEnabled);
-      b.textContent = prefs.soundEnabled ? '🔊 Sound on' : '🔈 Sound off';
-    });
-    document.querySelectorAll('.ambient-sound-select').forEach(sel => {
-      sel.value = prefs.sound;
-      sel.disabled = !prefs.soundEnabled;
-    });
+    // Sound controls now belong to MemoriumSound panel; keep hidden legacy selectors in sync if they exist
+    if (window.MemoriumSound) {
+      const st = window.MemoriumSound.getState();
+      document.querySelectorAll('[data-ambience="sound"]').forEach(b => {
+        const playing = !!(st && st.isAmbientPlaying);
+        b.setAttribute('aria-pressed', String(playing));
+        b.classList.toggle('active', playing);
+        b.textContent = playing ? '🔊 Sound on' : '🔈 Sound off';
+      });
+      document.querySelectorAll('.ambient-sound-select').forEach(sel => {
+        sel.value = st && st.selectedAmbient ? st.selectedAmbient : 'rain';
+        sel.disabled = false;
+      });
+    }
   }
 
   function ensureAmbientBar() {
@@ -127,44 +128,29 @@
     const bar = document.createElement('div');
     bar.className = 'ambient-bar';
     bar.setAttribute('role', 'toolbar');
-    bar.setAttribute('aria-label', 'Ambience');
+    bar.setAttribute('aria-label', 'Visual ambience');
     bar.innerHTML = `
             <span class="ambient-label">Ambience</span>
             <button type="button" class="ambient-btn" data-ambience="grain" aria-pressed="true" title="Toggle paper grain">Grain</button>
             <button type="button" class="ambient-btn" data-ambience="warm" aria-pressed="true" title="Toggle warm light">Warm light</button>
-            <button type="button" class="ambient-btn" data-ambience="sound" aria-pressed="false" title="Play ambient sound (user-initiated)">🔈 Sound off</button>
-            <select class="ambient-sound-select" aria-label="Ambient sound">
-                <option value="rain">Rain</option>
-                <option value="fireplace">Fireplace</option>
-                <option value="birds">Birds</option>
-                <option value="coffee">Coffee shop</option>
-                <option value="writing">Writing</option>
-            </select>
+            <span class="ambient-sound-hint" style="font-family:var(--heading-font, 'Cormorant Garamond', serif);font-size:0.72rem;color:var(--text-muted, #6E6259);margin-left:0.3rem;">Sound → panel below</span>
         `;
-    // insert after theme bar if present, else before notebook
-    const themeBar = document.querySelector('.theme-bar');
-    if (themeBar && themeBar.nextSibling)
-      themeBar.parentNode.insertBefore(bar, themeBar.nextSibling);
+    // insert after theme system if present, else before notebook (visual only — sound handled by MemoriumSound)
+    const themeSystem = document.getElementById('theme-family-system');
+    const penHolder = document.getElementById('pen-holder-system');
+    const anchor = penHolder || themeSystem || document.querySelector('.theme-bar');
+    if (anchor && anchor.nextSibling) anchor.parentNode.insertBefore(bar, anchor.nextSibling);
     else notebook.parentNode.insertBefore(bar, notebook);
 
     bar.querySelector('[data-ambience="grain"]').addEventListener('click', toggleGrain);
     bar.querySelector('[data-ambience="warm"]').addEventListener('click', toggleWarmLight);
-    bar.querySelector('[data-ambience="sound"]').addEventListener('click', toggleSound);
-    bar
-      .querySelector('.ambient-sound-select')
-      .addEventListener('change', e => setSound(e.target.value));
+    // Legacy sound listeners kept for external callers, but hidden from UI (sound panel owns them now)
   }
 
   function init() {
     ensureAmbientBar();
     applyVisualAmbience();
-    // Do NOT autoplay audio - only if user previously enabled and interacts, wait for click
-    // We do not call playSound() automatically if soundEnabled, to respect no-autoplay rule.
-    // Instead, show controls as enabled but require user click to start.
-    if (prefs.soundEnabled) {
-      // prepare element but don't play until user gesture
-      ensureAudio().src = `audio/${prefs.sound}.mp3`;
-    }
+    // Visual-only; sound no longer autoplayed here — MemoriumSound owns playback and respects user gesture
     updateControls();
     // inject minimal CSS if not present
     if (!document.getElementById('memorium-ambient-style')) {

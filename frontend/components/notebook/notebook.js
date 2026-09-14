@@ -18,6 +18,7 @@
       id: 12,
       title: 'Friday, February 14, 2026',
       theme: 'classic-leather',
+      paper: 'plain',
       content: null,
       decorations: [],
     },
@@ -25,6 +26,7 @@
       id: 13,
       title: 'Friday, February 14, 2026',
       theme: 'classic-leather',
+      paper: 'plain',
       content: null,
       decorations: [],
     },
@@ -56,6 +58,14 @@
     }
     return t || 'classic-leather';
   }
+  function normalizePaper(p) {
+    if (window.MemoriumPaperConfig && window.MemoriumPaperConfig.normalizePaper) {
+      return window.MemoriumPaperConfig.normalizePaper(p);
+    }
+    const allowed = ['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'];
+    if (!p) return 'plain';
+    return allowed.includes(p) ? p : 'plain';
+  }
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -65,12 +75,15 @@
           state = parsed;
           // ensure nextId exists
           if (!state.nextId) state.nextId = Math.max(...state.pages.map(p => p.id)) + 1;
-          // migrate old theme ids to new
+          // migrate old theme/paper ids to new
           let needsSave = false;
           state.pages.forEach(p => {
             const before = p.theme;
             p.theme = normalizeTheme(p.theme);
             if (before !== p.theme) needsSave = true;
+            const beforePaper = p.paper;
+            p.paper = normalizePaper(p.paper);
+            if (beforePaper !== p.paper) needsSave = true;
           });
           if (needsSave) saveState();
           return;
@@ -98,6 +111,7 @@
         }
         // normalize already
         p.theme = normalizeTheme(p.theme);
+        p.paper = normalizePaper(p.paper);
       } catch (_) {}
     });
     if (migrated) saveState();
@@ -161,17 +175,30 @@
     leftPageEl.style.display = '';
     rightPageEl.style.display = '';
 
-    // Update attributes and theme per page
+    // Update attributes and theme/paper per page
     state.pages.forEach(p => {
       p.theme = normalizeTheme(p.theme);
+      p.paper = normalizePaper(p.paper);
       const el =
         p.id === state.pages[0].id ? leftPageEl : p.id === state.pages[1]?.id ? rightPageEl : null;
       if (!el) return;
       el.dataset.page = String(p.id);
       el.dataset.theme = p.theme || 'classic-leather';
+      el.dataset.paper = p.paper || 'plain';
       // Remove any old theme-* class and add new
       el.className = el.className.replace(/\btheme-[\w-]+\b/g, '').trim();
       el.classList.add('theme-' + (p.theme || 'classic-leather'));
+      // Paper class
+      el.className = el.className.replace(/\bpaper-[\w-]+\b/g, '').trim();
+      el.classList.add('paper-' + (p.paper || 'plain'));
+      // Ensure paper pattern element
+      let pat = el.querySelector('.paper-pattern');
+      if (!pat) {
+        pat = document.createElement('div');
+        pat.className = 'paper-pattern';
+        pat.setAttribute('aria-hidden', 'true');
+        el.insertBefore(pat, el.firstChild);
+      }
       // Set family for CSS
       if (window.MemoriumThemeConfig && window.MemoriumThemeConfig.THEMES[p.theme]) {
         el.dataset.themeFamily = window.MemoriumThemeConfig.THEMES[p.theme].family;
@@ -230,15 +257,31 @@
   function nextPage() {
     if (state.currentPageIndex >= state.pages.length - 1) return false;
     animateTurn('next');
+    try {
+      if (window.MemoriumSound && window.MemoriumSound.playInteraction)
+        window.MemoriumSound.playInteraction('page-flip');
+    } catch (_) {}
     return loadPage(state.currentPageIndex + 1);
   }
   function previousPage() {
     if (state.currentPageIndex <= 0) return false;
     animateTurn('prev');
+    try {
+      if (window.MemoriumSound && window.MemoriumSound.playInteraction)
+        window.MemoriumSound.playInteraction('page-flip');
+    } catch (_) {}
     return loadPage(state.currentPageIndex - 1);
   }
   function goToPage(index) {
-    return loadPage(index);
+    const isUserTurn = index !== state.currentPageIndex && index >= 0 && index < state.pages.length;
+    const result = loadPage(index);
+    if (isUserTurn && result) {
+      try {
+        if (window.MemoriumSound && window.MemoriumSound.playInteraction)
+          window.MemoriumSound.playInteraction('page-flip');
+      } catch (_) {}
+    }
+    return result;
   }
 
   function animateTurn(dir) {
@@ -263,6 +306,7 @@
         day: 'numeric',
       }),
       theme: normalizeTheme(getCurrentPage()?.theme || 'classic-leather'),
+      paper: normalizePaper(getCurrentPage()?.paper || 'plain'),
       content: `<p class="page-paragraph"><span class="page-first-letter">D</span>ear Diary...</p>`,
       decorations: [],
     };
@@ -300,6 +344,31 @@
     }
     document.dispatchEvent(
       new CustomEvent('memorium:themechange-notebook', { detail: { theme: resolved } })
+    );
+  }
+
+  function applyPaperToCurrent(paper) {
+    const page = getCurrentPage();
+    if (!page) return;
+    const resolved = normalizePaper(paper);
+    page.paper = resolved;
+    saveState();
+    renderCurrentPage();
+    // Notify paper manager if not already handling
+    if (
+      window.MemoriumPaper &&
+      typeof window.MemoriumPaper.applyPaper === 'function' &&
+      !applyPaperToCurrent._fromManager
+    ) {
+      try {
+        applyPaperToCurrent._fromManager = true;
+        window.MemoriumPaper.applyPaper(resolved, { syncNotebook: false, persist: true });
+      } finally {
+        applyPaperToCurrent._fromManager = false;
+      }
+    }
+    document.dispatchEvent(
+      new CustomEvent('memorium:paperchange-notebook', { detail: { paper: resolved } })
     );
   }
 
@@ -1080,6 +1149,11 @@
       const theme = e.detail && e.detail.theme;
       if (theme) applyThemeToCurrent(theme);
     });
+    // paper change listener (Step 11F) — per-page, no global glitch
+    document.addEventListener('memorium:paperchange', e => {
+      const paper = e.detail && e.detail.paper;
+      if (paper) applyPaperToCurrent(paper);
+    });
     // also handle clicks on page nav hints
     const prevHint = document.querySelector('.notebook-nav-hint--prev');
     const nextHint = document.querySelector('.notebook-nav-hint--next');
@@ -1087,6 +1161,414 @@
       ((prevHint.style.cursor = 'pointer'), prevHint.addEventListener('click', previousPage));
     if (nextHint)
       ((nextHint.style.cursor = 'pointer'), nextHint.addEventListener('click', nextPage));
+  }
+
+  // ============================================================
+  // STEP 11E — PHYSICAL PAGE INTERACTION
+  // Subtle edge lift, corner curl, drag-to-turn, swipe, flip
+  // Preserves writing safety, reuses MemoriumSound, theme etc.
+  // ============================================================
+  let _physDragging = false;
+  let _physDragPage = null;
+  let _physHandle = null;
+  let _physStartX = 0;
+  let _physStartY = 0;
+  let _physSwipeStartX = 0;
+  let _physSwipeStartY = 0;
+  let _physSwipeActive = false;
+  let _physSwipePointerId = null;
+
+  function isWritingSelectionActive() {
+    try {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed) return false;
+      const active = document.activeElement;
+      if (active && active.isContentEditable) {
+        if (active.contains(sel.anchorNode) || active.contains(sel.focusNode)) return true;
+      }
+      // also check if selection is inside any writing area
+      const areas = document.querySelectorAll('.page-writing-area');
+      for (const a of areas) {
+        if (a.contains(sel.anchorNode) || a.contains(sel.focusNode)) return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function canNavigate(dir) {
+    if (dir === 'next') return state.currentPageIndex < state.pages.length - 1;
+    if (dir === 'prev') return state.currentPageIndex > 0;
+    return false;
+  }
+
+  function ensurePhysicalHandles() {
+    if (!notebookEl || !leftPageEl || !rightPageEl) return;
+    // avoid duplicate
+    if (notebookEl._physHandles) return;
+    notebookEl._physHandles = true;
+
+    // add corner curls + drag shadow if missing
+    [leftPageEl, rightPageEl].forEach((pageEl, idx) => {
+      if (!pageEl.querySelector('.page-corner-curl')) {
+        const curl = document.createElement('div');
+        curl.className =
+          'page-corner-curl ' + (idx === 0 ? 'page-corner-curl--left' : 'page-corner-curl--right');
+        curl.setAttribute('aria-hidden', 'true');
+        pageEl.appendChild(curl);
+      }
+      if (!pageEl.querySelector('.notebook-page-shadow--drag')) {
+        const sd = document.createElement('div');
+        sd.className = 'notebook-page-shadow--drag';
+        sd.setAttribute('aria-hidden', 'true');
+        pageEl.appendChild(sd);
+      }
+    });
+
+    // right edge handle — next
+    if (!rightPageEl.querySelector('.page-edge-handle--right')) {
+      const h = document.createElement('div');
+      h.className = 'page-edge-handle page-edge-handle--right';
+      h.dataset.dir = 'next';
+      h.setAttribute('aria-label', 'Drag to next page');
+      h.setAttribute('role', 'button');
+      h.setAttribute('tabindex', '0');
+      rightPageEl.appendChild(h);
+      // hover lift
+      h.addEventListener('pointerenter', () => {
+        if (_physDragging || window.matchMedia('(pointer: coarse)').matches) return;
+        if (!canNavigate('next')) return;
+        rightPageEl.classList.add('edge-hover');
+        const c = rightPageEl.querySelector('.page-corner-curl--right');
+        if (c) c.classList.add('visible');
+      });
+      h.addEventListener('pointerleave', () => {
+        if (_physDragging) return;
+        rightPageEl.classList.remove('edge-hover');
+        const c = rightPageEl.querySelector('.page-corner-curl--right');
+        if (c) c.classList.remove('visible');
+      });
+      h.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          nextPage();
+        }
+      });
+      h.addEventListener('click', e => {
+        // click-to-turn fallback — but not after drag
+        if (_physDragging) return;
+        e.preventDefault();
+        nextPage();
+      });
+      h.addEventListener('pointerdown', onPhysDragStart);
+    }
+
+    // left edge handle — prev
+    if (!leftPageEl.querySelector('.page-edge-handle--left')) {
+      const h = document.createElement('div');
+      h.className = 'page-edge-handle page-edge-handle--left';
+      h.dataset.dir = 'prev';
+      h.setAttribute('aria-label', 'Drag to previous page');
+      h.setAttribute('role', 'button');
+      h.setAttribute('tabindex', '0');
+      leftPageEl.appendChild(h);
+      h.addEventListener('pointerenter', () => {
+        if (_physDragging || window.matchMedia('(pointer: coarse)').matches) return;
+        if (!canNavigate('prev')) return;
+        leftPageEl.classList.add('edge-hover');
+        const c = leftPageEl.querySelector('.page-corner-curl--left');
+        if (c) c.classList.add('visible');
+      });
+      h.addEventListener('pointerleave', () => {
+        if (_physDragging) return;
+        leftPageEl.classList.remove('edge-hover');
+        const c = leftPageEl.querySelector('.page-corner-curl--left');
+        if (c) c.classList.remove('visible');
+      });
+      h.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          previousPage();
+        }
+      });
+      h.addEventListener('click', e => {
+        if (_physDragging) return;
+        e.preventDefault();
+        previousPage();
+      });
+      h.addEventListener('pointerdown', onPhysDragStart);
+    }
+
+    // fallback mousemove edge hover for devices without handle hover (desktop)
+    notebookEl.addEventListener('mousemove', onPhysEdgeHover);
+    notebookEl.addEventListener('mouseleave', clearPhysHover);
+
+    // swipe handling — pointer events on notebook (mobile)
+    notebookEl.addEventListener('pointerdown', onPhysSwipeDown, { passive: true });
+  }
+
+  function onPhysEdgeHover(e) {
+    if (_physDragging) return;
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+    if (!leftPageEl || !rightPageEl) return;
+    // ignore when over writing selection or decorations
+    if (
+      e.target.closest &&
+      (e.target.closest('.decoration') || e.target.closest('.page-writing-area'))
+    ) {
+      // still allow if near edge? but suppress to keep writing safe
+      // check if pointer is truly near outer edge beyond writing area padding
+      // if inside writing area central, don't show lift
+      const isWriting = !!e.target.closest('.page-writing-area');
+      if (isWriting && !e.target.closest('.page-edge-handle')) {
+        // suppress unless actually over handle zone
+        // we already handle handles, so just skip global hover when inside writing
+        return;
+      }
+    }
+    const rRect = rightPageEl.getBoundingClientRect();
+    const lRect = leftPageEl.getBoundingClientRect();
+    const nearRight =
+      e.clientX > rRect.right - 44 &&
+      e.clientX < rRect.right + 10 &&
+      e.clientY > rRect.top &&
+      e.clientY < rRect.bottom;
+    const nearLeft =
+      e.clientX < lRect.left + 44 &&
+      e.clientX > lRect.left - 10 &&
+      e.clientY > lRect.top &&
+      e.clientY < lRect.bottom;
+    // right
+    if (nearRight && canNavigate('next')) {
+      rightPageEl.classList.add('edge-hover');
+      const c = rightPageEl.querySelector('.page-corner-curl--right');
+      if (c) c.classList.add('visible');
+    } else {
+      rightPageEl.classList.remove('edge-hover');
+      const c = rightPageEl.querySelector('.page-corner-curl--right');
+      if (c) c.classList.remove('visible');
+    }
+    if (nearLeft && canNavigate('prev')) {
+      leftPageEl.classList.add('edge-hover');
+      const c = leftPageEl.querySelector('.page-corner-curl--left');
+      if (c) c.classList.add('visible');
+    } else {
+      leftPageEl.classList.remove('edge-hover');
+      const c = leftPageEl.querySelector('.page-corner-curl--left');
+      if (c) c.classList.remove('visible');
+    }
+  }
+
+  function clearPhysHover() {
+    if (!leftPageEl || !rightPageEl) return;
+    leftPageEl.classList.remove('edge-hover');
+    rightPageEl.classList.remove('edge-hover');
+    const cr = rightPageEl.querySelector('.page-corner-curl--right');
+    const cl = leftPageEl.querySelector('.page-corner-curl--left');
+    if (cr) cr.classList.remove('visible');
+    if (cl) cl.classList.remove('visible');
+  }
+
+  function onPhysDragStart(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    const handle = e.currentTarget;
+    const dir = handle.dataset.dir;
+    if (!canNavigate(dir)) return;
+    if (isWritingSelectionActive()) return;
+    if (e.target.closest && e.target.closest('.decoration')) return;
+    // touch should not be confused with scroll — pointer capture will handle
+    e.preventDefault();
+    _physDragging = true;
+    _physHandle = handle;
+    _physDragPage = dir === 'next' ? rightPageEl : leftPageEl;
+    _physStartX = e.clientX;
+    _physStartY = e.clientY;
+    clearPhysHover();
+    _physDragPage.classList.add('is-dragging');
+    _physDragPage.style.transition = 'none';
+    // ensure pointer capture
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch (_) {}
+    document.addEventListener('pointermove', onPhysDragMove);
+    document.addEventListener('pointerup', onPhysDragEnd);
+    document.addEventListener('pointercancel', onPhysDragEnd);
+  }
+
+  function onPhysDragMove(e) {
+    if (!_physDragging || !_physDragPage) return;
+    const dx = e.clientX - _physStartX;
+    const dy = e.clientY - _physStartY;
+    // if vertical dominates and small horizontal, don't interfere with scroll — but allow horizontal drag
+    if (Math.abs(dy) > Math.abs(dx) * 1.4 && Math.abs(dx) < 16) return;
+    // prevent scrolling while dragging
+    if (Math.abs(dx) > 8) e.preventDefault();
+    const pageWidth = _physDragPage.getBoundingClientRect().width || 480;
+    const isNext = _physDragPage === rightPageEl;
+    let adx;
+    if (isNext) {
+      adx = Math.min(0, dx); // only left
+    } else {
+      adx = Math.max(0, dx); // only right
+    }
+    const progress = Math.min(1, Math.abs(adx) / pageWidth);
+    const rotate = (isNext ? -1 : 1) * progress * 36;
+    const translate = adx * 0.55;
+    const lift = -progress * 5;
+    _physDragPage.style.transform = `translateX(${translate}px) translateY(${lift}px) rotateY(${rotate}deg)`;
+    const shadow = _physDragPage.querySelector('.notebook-page-shadow--drag');
+    if (shadow) shadow.style.opacity = String(progress * 0.9);
+    const curl = _physDragPage.querySelector('.page-corner-curl');
+    if (curl) {
+      curl.classList.add('visible');
+      curl.style.opacity = String(0.7 + progress * 0.3);
+    }
+  }
+
+  function onPhysDragEnd(e) {
+    if (!_physDragging || !_physDragPage) return;
+    const wasPage = _physDragPage;
+    const wasHandle = _physHandle;
+    const dx = e.clientX - _physStartX;
+    const pageWidth = wasPage.getBoundingClientRect().width || 480;
+    const progress = Math.abs(dx) / pageWidth;
+    const absDx = Math.abs(dx);
+    const isNext = wasPage === rightPageEl;
+    const effectiveDx = isNext ? Math.min(0, dx) : Math.max(0, dx);
+    const shouldTurn =
+      canNavigate(isNext ? 'next' : 'prev') &&
+      (progress > 0.22 || absDx > 84) &&
+      Math.abs(effectiveDx) > 8 &&
+      (isNext ? effectiveDx < -1 : effectiveDx > 1);
+    // cleanup
+    _physDragging = false;
+    _physDragPage = null;
+    _physHandle = null;
+    wasPage.classList.remove('is-dragging', 'edge-hover');
+    wasPage.style.transition = '';
+    const shadow = wasPage.querySelector('.notebook-page-shadow--drag');
+    if (shadow) shadow.style.opacity = '0';
+    const curl = wasPage.querySelector('.page-corner-curl');
+    if (curl) {
+      curl.style.opacity = '';
+      // keep visible briefly if turning, else hide
+      if (!shouldTurn) curl.classList.remove('visible');
+    }
+    try {
+      wasHandle && wasHandle.releasePointerCapture && wasHandle.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+    document.removeEventListener('pointermove', onPhysDragMove);
+    document.removeEventListener('pointerup', onPhysDragEnd);
+    document.removeEventListener('pointercancel', onPhysDragEnd);
+
+    if (shouldTurn) {
+      wasPage.style.transform = '';
+      if (isNext) {
+        notebookEl.classList.add('is-flipping-next');
+        setTimeout(() => notebookEl.classList.remove('is-flipping-next'), 620);
+        nextPage();
+      } else {
+        notebookEl.classList.add('is-flipping-prev');
+        setTimeout(() => notebookEl.classList.remove('is-flipping-prev'), 620);
+        previousPage();
+      }
+      // hide curl after turn
+      setTimeout(() => {
+        if (curl) curl.classList.remove('visible');
+      }, 400);
+    } else {
+      // snap back
+      wasPage.style.transform = 'translateX(0) translateY(0) rotateY(0)';
+      setTimeout(() => {
+        wasPage.style.transform = '';
+      }, 340);
+    }
+  }
+
+  // Swipe (mobile) — anywhere on notebook, horizontal swipe
+  function onPhysSwipeDown(e) {
+    // ignore if handle already dragging or decoration
+    if (_physDragging) return;
+    if (
+      e.target.closest &&
+      (e.target.closest('.page-edge-handle') ||
+        e.target.closest('.decoration') ||
+        e.target.closest('button') ||
+        e.target.closest('a'))
+    )
+      return;
+    // writing safety: if selection active inside writing area, ignore swipe
+    if (isWritingSelectionActive()) return;
+    // only primary pointer
+    if (e.isPrimary === false) return;
+    // ignore right-click
+    if (e.button !== undefined && e.button !== 0) return;
+    // store start for potential swipe
+    _physSwipeStartX = e.clientX;
+    _physSwipeStartY = e.clientY;
+    _physSwipeActive = true;
+    _physSwipePointerId = e.pointerId;
+    // we listen on document for move/up to catch swipe beyond notebook
+    document.addEventListener('pointermove', onPhysSwipeMove, { passive: true });
+    document.addEventListener('pointerup', onPhysSwipeUp, { passive: true });
+    document.addEventListener('pointercancel', onPhysSwipeUp, { passive: true });
+  }
+
+  function onPhysSwipeMove(e) {
+    if (!_physSwipeActive) return;
+    if (e.pointerId !== _physSwipePointerId) return;
+    // we don't prevent here, just track — threshold decides at Up
+    // if vertical scroll dominates, cancel swipe
+    const dx = e.clientX - _physSwipeStartX;
+    const dy = e.clientY - _physSwipeStartY;
+    if (Math.abs(dy) > Math.abs(dx) + 10 && Math.abs(dx) < 24) {
+      // vertical scroll — cancel swipe to not interfere
+      _physSwipeActive = false;
+      cleanupSwipe();
+    }
+  }
+
+  function onPhysSwipeUp(e) {
+    if (!_physSwipeActive) return;
+    if (e.pointerId !== _physSwipePointerId) return;
+    const dx = e.clientX - _physSwipeStartX;
+    const dy = e.clientY - _physSwipeStartY;
+    _physSwipeActive = false;
+    cleanupSwipe();
+    // must be substantial horizontal and not too vertical
+    if (Math.abs(dx) < 62) return;
+    if (Math.abs(dy) > Math.abs(dx) * 0.9) return;
+    // don't swipe if contenteditable is focused and user was selecting text (already handled) or typing
+    const active = document.activeElement;
+    if (active && active.isContentEditable) {
+      // if active and swipe started inside writing area, require larger threshold to avoid accidental turns
+      const inWriting = e.target.closest && e.target.closest('.page-writing-area');
+      if (inWriting && Math.abs(dx) < 84) return;
+    }
+    if (dx < 0 && canNavigate('next')) {
+      // swipe left → next
+      notebookEl.classList.add('is-flipping-next');
+      setTimeout(() => notebookEl.classList.remove('is-flipping-next'), 620);
+      nextPage();
+    } else if (dx > 0 && canNavigate('prev')) {
+      // swipe right → prev
+      notebookEl.classList.add('is-flipping-prev');
+      setTimeout(() => notebookEl.classList.remove('is-flipping-prev'), 620);
+      previousPage();
+    }
+  }
+
+  function cleanupSwipe() {
+    document.removeEventListener('pointermove', onPhysSwipeMove);
+    document.removeEventListener('pointerup', onPhysSwipeUp);
+    document.removeEventListener('pointercancel', onPhysSwipeUp);
+  }
+
+  function setupPhysicalInteraction() {
+    ensurePhysicalHandles();
+    // re-ensure handles after page render (pages swap content but handles stay on same DOM nodes — fine)
+    // observe future renders to re-ensure if DOM recreated
+    const obs = new MutationObserver(() => ensurePhysicalHandles());
+    if (notebookEl) obs.observe(notebookEl, { childList: true, subtree: true });
   }
 
   function debounce(fn, ms) {
@@ -1109,6 +1591,7 @@
     updateNavButtons();
     renderNavigationHints();
     setupEventListeners();
+    setupPhysicalInteraction();
     // update indicator text
     const upd = () => {
       const ind = document.getElementById('page-indicator');
@@ -1143,6 +1626,7 @@
     removeDecoration,
     getState: () => state,
     applyThemeToCurrent,
+    applyPaperToCurrent,
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

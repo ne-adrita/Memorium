@@ -75,6 +75,15 @@ const journalSchema = new mongoose.Schema(
         message: '{VALUE} is not a valid themeId',
       },
     },
+    paper: {
+      type: String,
+      enum: {
+        values: ['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'],
+        message: '{VALUE} is not a valid paper',
+      },
+      default: 'plain',
+      trim: true,
+    },
   },
   {
     timestamps: true,

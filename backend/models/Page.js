@@ -63,6 +63,15 @@ const pageSchema = new mongoose.Schema(
       },
       default: 'classic-leather',
     },
+    paper: {
+      type: String,
+      enum: {
+        values: ['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'],
+        message: '{VALUE} is not a valid paper',
+      },
+      default: 'plain',
+      trim: true,
+    },
   },
   {
     timestamps: true,

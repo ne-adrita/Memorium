@@ -24,6 +24,18 @@
     return null;
   }
 
+  function triggerWritingSound(pen) {
+    try {
+      if (!pen) pen = getSelectedPenSafe();
+      if (!pen || !pen.writingSound) return;
+      if (window.MemoriumSound && window.MemoriumSound.notifyWritingInput) {
+        window.MemoriumSound.notifyWritingInput(pen.writingSound);
+      } else if (window.MemoriumSound && window.MemoriumSound.handleWritingActivity) {
+        window.MemoriumSound.handleWritingActivity(pen.writingSound);
+      }
+    } catch (_) {}
+  }
+
   function hexToRgba(hex, opacity) {
     if (!hex) return `rgba(0,0,0,${opacity})`;
     const h = hex.replace('#', '').trim();
@@ -245,6 +257,12 @@
         area.setAttribute('data-active-pen', pen.id);
       }
     });
+    area.addEventListener('blur', () => {
+      try {
+        if (window.MemoriumSound && window.MemoriumSound.stopWritingSound)
+          window.MemoriumSound.stopWritingSound();
+      } catch (_) {}
+    });
 
     area.addEventListener('beforeinput', e => {
       const pen = getSelectedPenSafe();
@@ -256,6 +274,7 @@
         // Prevent default and insert with pen
         e.preventDefault();
         insertTextWithPen(area, data, pen);
+        triggerWritingSound(pen);
         // Trigger input event manually for autosave
         area.dispatchEvent(new Event('input', { bubbles: true }));
       } else if (e.inputType === 'insertFromPaste') {
@@ -293,6 +312,7 @@
             }
           }
         }
+        triggerWritingSound(pen);
         area.dispatchEvent(new Event('input', { bubbles: true }));
       } else if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak') {
         // For Enter, let browser handle but we want next typing to use pen — no need to intercept
@@ -341,6 +361,7 @@
           }
         }
       }
+      triggerWritingSound(pen);
       area.dispatchEvent(new Event('input', { bubbles: true }));
     });
 

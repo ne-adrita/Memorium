@@ -35,8 +35,14 @@ const getJournal = asyncHandler(async (req, res) => {
   res.json({ success: true, data: journal });
 });
 
+const PAPER_IDS = ['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'];
+function normalizePaper(v) {
+  if (!v) return v;
+  return PAPER_IDS.includes(v) ? v : 'plain';
+}
+
 const createJournal = asyncHandler(async (req, res) => {
-  const { title, description, cover, themeId } = req.body;
+  const { title, description, cover, themeId, paper } = req.body;
   if (!title || !title.trim()) {
     return res.status(400).json({ success: false, message: 'Title is required' });
   }
@@ -46,6 +52,7 @@ const createJournal = asyncHandler(async (req, res) => {
     description: description || '',
     cover: cover || undefined,
     themeId: normalizeThemeId(themeId) || 'classic-leather',
+    paper: normalizePaper(paper) || 'plain',
   });
   res.status(201).json({ success: true, data: journal });
 });
@@ -59,7 +66,7 @@ const updateJournal = asyncHandler(async (req, res) => {
   if (journal.owner.toString() !== req.user.id) {
     return res.status(403).json({ success: false, message: 'Forbidden' });
   }
-  const { title, description, cover, themeId } = req.body;
+  const { title, description, cover, themeId, paper } = req.body;
   if (title !== undefined) {
     if (!title.trim())
       return res.status(400).json({ success: false, message: 'Title cannot be empty' });
@@ -68,6 +75,11 @@ const updateJournal = asyncHandler(async (req, res) => {
   if (description !== undefined) journal.description = description;
   if (cover !== undefined) journal.cover = cover;
   if (themeId !== undefined) journal.themeId = normalizeThemeId(themeId);
+  if (paper !== undefined) {
+    if (!PAPER_IDS.includes(paper))
+      return res.status(400).json({ success: false, message: 'Invalid paper' });
+    journal.paper = paper;
+  }
   await journal.save();
   res.json({ success: true, data: journal });
 });

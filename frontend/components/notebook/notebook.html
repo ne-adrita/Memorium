@@ -31,7 +31,8 @@ Dependencies:
 <link rel="stylesheet" href="notebook.css" />
 <link rel="stylesheet" href="../../css/themes.css" />
 <link rel="stylesheet" href="../../css/pens.css" />
-<div class="notebook" data-theme="classic-leather" data-state="open">
+<link rel="stylesheet" href="../../css/papers.css" />
+<div class="notebook" data-theme="classic-leather" data-paper="plain" data-state="open">
   <!--
         =============================================
         BOOK COVER (Background)
@@ -68,7 +69,8 @@ Dependencies:
         =============================================
         The writing page — where users pour their thoughts
         -->
-  <div class="notebook-page notebook-page--left" data-page="12">
+  <div class="notebook-page notebook-page--left paper-plain" data-page="12" data-paper="plain">
+    <div class="paper-pattern" aria-hidden="true"></div>
     <!-- Page shadow for depth (left side curve) -->
     <div class="notebook-page-shadow notebook-page-shadow--left"></div>
 
@@ -147,7 +149,8 @@ Dependencies:
         =============================================
         The decoration page — for photos, stickers, memories
         -->
-  <div class="notebook-page notebook-page--right" data-page="13">
+  <div class="notebook-page notebook-page--right paper-plain" data-page="13" data-paper="plain">
+    <div class="paper-pattern" aria-hidden="true"></div>
     <!-- Page shadow for depth (right side curve) -->
     <div class="notebook-page-shadow notebook-page-shadow--right"></div>
 
@@ -218,6 +221,9 @@ Dependencies:
 <script src="../../js/theme.js"></script>
 <script src="../../js/penConfig.js"></script>
 <script src="../../js/pen.js"></script>
+<script src="../../js/paperConfig.js"></script>
+<script src="../../js/paper.js"></script>
+<script src="../../js/sound.js"></script>
 <script src="../../js/ambient.js"></script>
 <script src="notebook.js"></script>
 <script src="../../js/writing.js"></script>

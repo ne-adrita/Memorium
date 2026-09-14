@@ -49,6 +49,7 @@
     <link rel="stylesheet" href="components/notebook/notebook.css" />
     <link rel="stylesheet" href="css/themes.css" />
     <link rel="stylesheet" href="css/pens.css" />
+    <link rel="stylesheet" href="css/papers.css" />
   </head>
   <body>
     <!-- ============================================================
@@ -162,6 +163,7 @@
           <div
             class="notebook"
             data-theme="classic-leather"
+            data-paper="plain"
             data-state="open"
             style="width: 1100px; max-width: 95vw"
           >
@@ -178,7 +180,8 @@
             <div class="notebook-bookmark" aria-hidden="true">
               <div class="notebook-bookmark-ribbon"></div>
             </div>
-            <div class="notebook-page notebook-page--left" data-page="12" data-theme="classic-leather">
+            <div class="notebook-page notebook-page--left paper-plain" data-page="12" data-theme="classic-leather" data-paper="plain">
+              <div class="paper-pattern" aria-hidden="true"></div>
               <div class="notebook-page-shadow notebook-page-shadow--left"></div>
               <div class="notebook-page-content">
                 <header class="page-header">
@@ -229,7 +232,8 @@
               <div class="notebook-spine-line"></div>
               <div class="notebook-spine-shadow"></div>
             </div>
-            <div class="notebook-page notebook-page--right" data-page="13" data-theme="classic-leather">
+            <div class="notebook-page notebook-page--right paper-plain" data-page="13" data-theme="classic-leather" data-paper="plain">
+              <div class="paper-pattern" aria-hidden="true"></div>
               <div class="notebook-page-shadow notebook-page-shadow--right"></div>
               <div class="notebook-page-content">
                 <header class="page-header">
@@ -356,6 +360,9 @@
     <script src="js/theme.js"></script>
     <script src="js/penConfig.js"></script>
     <script src="js/pen.js"></script>
+    <script src="js/paperConfig.js"></script>
+    <script src="js/paper.js"></script>
+    <script src="js/sound.js"></script>
     <script src="js/ambient.js"></script>
     <script src="components/notebook/notebook.js"></script>
     <script src="js/writing.js"></script>

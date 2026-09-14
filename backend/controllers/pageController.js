@@ -32,6 +32,12 @@ function normalizeTheme(v) {
   return THEME_MIGRATION[v] || v;
 }
 
+const PAPER_IDS = ['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'];
+function normalizePaper(v) {
+  if (!v) return v;
+  return PAPER_IDS.includes(v) ? v : 'plain';
+}
+
 const listPages = asyncHandler(async (req, res) => {
   const { journalId } = req.params;
   if (!journalId)
@@ -60,7 +66,7 @@ const createPage = asyncHandler(async (req, res) => {
   const { error } = await ensureJournalOwnership(journalId, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
 
-  const { pageNumber, title, content, theme } = req.body;
+  const { pageNumber, title, content, theme, paper } = req.body;
   if (pageNumber === undefined || pageNumber === null) {
     return res.status(400).json({ success: false, message: 'pageNumber is required' });
   }
@@ -102,6 +108,9 @@ const createPage = asyncHandler(async (req, res) => {
   if (theme && !ALLOWED_THEMES.includes(theme)) {
     return res.status(400).json({ success: false, message: 'Invalid theme' });
   }
+  if (paper && !PAPER_IDS.includes(paper)) {
+    return res.status(400).json({ success: false, message: 'Invalid paper' });
+  }
   try {
     const page = await Page.create({
       journal: journalId,
@@ -109,6 +118,7 @@ const createPage = asyncHandler(async (req, res) => {
       title: title || '',
       content: content || '',
       theme: normalizeTheme(theme) || 'classic-leather',
+      paper: normalizePaper(paper) || 'plain',
     });
     res.status(201).json({ success: true, data: page });
   } catch (err) {
@@ -127,7 +137,7 @@ const updatePage = asyncHandler(async (req, res) => {
   const { error } = await ensurePageOwnership(id, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
 
-  const { pageNumber, title, content, theme, journal } = req.body;
+  const { pageNumber, title, content, theme, paper, journal } = req.body;
   const update = {};
   if (pageNumber !== undefined) {
     const num = Number(pageNumber);
@@ -173,6 +183,12 @@ const updatePage = asyncHandler(async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid theme' });
     }
     update.theme = normalizeTheme(theme);
+  }
+  if (paper !== undefined) {
+    if (!PAPER_IDS.includes(paper)) {
+      return res.status(400).json({ success: false, message: 'Invalid paper' });
+    }
+    update.paper = paper;
   }
   if (journal !== undefined) {
     if (!isValidObjectId(journal))

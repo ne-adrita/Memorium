@@ -245,6 +245,10 @@ const validateJournalCreate = [
       'rose',
     ])
     .withMessage('Invalid themeId'),
+  body('paper')
+    .optional()
+    .isIn(['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'])
+    .withMessage('Invalid paper'),
   // cover is optional object; not strictly validated here
   handleValidationErrors,
 ];
@@ -298,6 +302,10 @@ const validateJournalUpdate = [
       'rose',
     ])
     .withMessage('Invalid themeId'),
+  body('paper')
+    .optional()
+    .isIn(['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'])
+    .withMessage('Invalid paper'),
   handleValidationErrors,
 ];
 
@@ -355,6 +363,10 @@ const validatePageCreate = [
       'rose',
     ])
     .withMessage('Invalid theme'),
+  body('paper')
+    .optional()
+    .isIn(['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'])
+    .withMessage('Invalid paper'),
   handleValidationErrors,
 ];
 
@@ -410,6 +422,10 @@ const validatePageUpdate = [
       'rose',
     ])
     .withMessage('Invalid theme'),
+  body('paper')
+    .optional()
+    .isIn(['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'])
+    .withMessage('Invalid paper'),
   // journal move: validated via controller but also check format
   body('journal').optional().isMongoId().withMessage('Invalid journal ID'),
   handleValidationErrors,
