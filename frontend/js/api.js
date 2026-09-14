@@ -440,7 +440,7 @@
           pageNumber: p.id || i + 1,
           title: p.title || '',
           content: p.content,
-          theme: p.theme || 'parchment',
+          theme: p.theme || 'classic-leather',
         });
         count++;
       } catch (e) {

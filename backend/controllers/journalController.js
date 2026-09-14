@@ -5,6 +5,18 @@ const Decoration = require('../models/Decoration');
 const Image = require('../models/Image');
 const { isValidObjectId, asyncHandler } = require('../utils/helper');
 
+const THEME_MIGRATION = {
+  parchment: 'classic-leather',
+  vintage: 'sepia-vintage',
+  aged: 'walnut',
+  handwritten: 'blush',
+  rose: 'rose-blush',
+};
+function normalizeThemeId(v) {
+  if (!v) return v;
+  return THEME_MIGRATION[v] || v;
+}
+
 const listJournals = asyncHandler(async (req, res) => {
   // Protected: only own journals
   const journals = await Journal.find({ owner: req.user.id }).sort({ updatedAt: -1 });
@@ -24,7 +36,7 @@ const getJournal = asyncHandler(async (req, res) => {
 });
 
 const createJournal = asyncHandler(async (req, res) => {
-  const { title, description, cover } = req.body;
+  const { title, description, cover, themeId } = req.body;
   if (!title || !title.trim()) {
     return res.status(400).json({ success: false, message: 'Title is required' });
   }
@@ -33,6 +45,7 @@ const createJournal = asyncHandler(async (req, res) => {
     title: title.trim(),
     description: description || '',
     cover: cover || undefined,
+    themeId: normalizeThemeId(themeId) || 'classic-leather',
   });
   res.status(201).json({ success: true, data: journal });
 });
@@ -46,7 +59,7 @@ const updateJournal = asyncHandler(async (req, res) => {
   if (journal.owner.toString() !== req.user.id) {
     return res.status(403).json({ success: false, message: 'Forbidden' });
   }
-  const { title, description, cover } = req.body;
+  const { title, description, cover, themeId } = req.body;
   if (title !== undefined) {
     if (!title.trim())
       return res.status(400).json({ success: false, message: 'Title cannot be empty' });
@@ -54,6 +67,7 @@ const updateJournal = asyncHandler(async (req, res) => {
   }
   if (description !== undefined) journal.description = description;
   if (cover !== undefined) journal.cover = cover;
+  if (themeId !== undefined) journal.themeId = normalizeThemeId(themeId);
   await journal.save();
   res.json({ success: true, data: journal });
 });

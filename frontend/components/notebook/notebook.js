@@ -17,14 +17,14 @@
     {
       id: 12,
       title: 'Friday, February 14, 2026',
-      theme: 'parchment',
+      theme: 'classic-leather',
       content: null,
       decorations: [],
     },
     {
       id: 13,
       title: 'Friday, February 14, 2026',
-      theme: 'parchment',
+      theme: 'classic-leather',
       content: null,
       decorations: [],
     },
@@ -50,6 +50,12 @@
   // ============================================================
   // PERSISTENCE — clean structure ready for API replacement
   // ============================================================
+  function normalizeTheme(t) {
+    if (window.MemoriumThemeConfig && window.MemoriumThemeConfig.resolveThemeId) {
+      return window.MemoriumThemeConfig.resolveThemeId(t);
+    }
+    return t || 'classic-leather';
+  }
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -59,6 +65,14 @@
           state = parsed;
           // ensure nextId exists
           if (!state.nextId) state.nextId = Math.max(...state.pages.map(p => p.id)) + 1;
+          // migrate old theme ids to new
+          let needsSave = false;
+          state.pages.forEach(p => {
+            const before = p.theme;
+            p.theme = normalizeTheme(p.theme);
+            if (before !== p.theme) needsSave = true;
+          });
+          if (needsSave) saveState();
           return;
         }
       }
@@ -74,7 +88,7 @@
         }
         const themeLegacy = localStorage.getItem(LEGACY_PREFIX + p.id + '-theme');
         if (themeLegacy) {
-          p.theme = themeLegacy;
+          p.theme = normalizeTheme(themeLegacy);
           migrated = true;
         }
         const decoLegacy = localStorage.getItem(LEGACY_PREFIX + p.id + '-decorations');
@@ -82,6 +96,8 @@
           p.decorations = JSON.parse(decoLegacy);
           migrated = true;
         }
+        // normalize already
+        p.theme = normalizeTheme(p.theme);
       } catch (_) {}
     });
     if (migrated) saveState();
@@ -147,13 +163,19 @@
 
     // Update attributes and theme per page
     state.pages.forEach(p => {
+      p.theme = normalizeTheme(p.theme);
       const el =
         p.id === state.pages[0].id ? leftPageEl : p.id === state.pages[1]?.id ? rightPageEl : null;
       if (!el) return;
       el.dataset.page = String(p.id);
-      el.dataset.theme = p.theme || 'parchment';
-      el.classList.remove('theme-parchment', 'theme-vintage', 'theme-aged', 'theme-handwritten');
-      el.classList.add('theme-' + (p.theme || 'parchment'));
+      el.dataset.theme = p.theme || 'classic-leather';
+      // Remove any old theme-* class and add new
+      el.className = el.className.replace(/\btheme-[\w-]+\b/g, '').trim();
+      el.classList.add('theme-' + (p.theme || 'classic-leather'));
+      // Set family for CSS
+      if (window.MemoriumThemeConfig && window.MemoriumThemeConfig.THEMES[p.theme]) {
+        el.dataset.themeFamily = window.MemoriumThemeConfig.THEMES[p.theme].family;
+      }
       const area = writingAreas[p.id];
       if (area && p.content != null) area.innerHTML = p.content;
       const numEl = el.querySelector('.page-number');
@@ -169,7 +191,7 @@
     // notify theme manager of current theme
     if (window.MemoriumTheme) {
       // set dot highlight to current page theme
-      const curTheme = page.theme || 'parchment';
+      const curTheme = normalizeTheme(page.theme || 'classic-leather');
       document.querySelectorAll('.theme-dot').forEach(d => {
         d.classList.toggle('active', d.dataset.theme === curTheme);
       });
@@ -240,7 +262,7 @@
         month: 'long',
         day: 'numeric',
       }),
-      theme: getCurrentPage()?.theme || 'parchment',
+      theme: normalizeTheme(getCurrentPage()?.theme || 'classic-leather'),
       content: `<p class="page-paragraph"><span class="page-first-letter">D</span>ear Diary...</p>`,
       decorations: [],
     };
@@ -259,13 +281,26 @@
   function applyThemeToCurrent(theme) {
     const page = getCurrentPage();
     if (!page) return;
-    page.theme = theme;
+    const resolved = normalizeTheme(theme);
+    page.theme = resolved;
     saveState();
     renderCurrentPage();
-    // also notify global theme manager
-    if (window.MemoriumTheme && window.MemoriumTheme.applyTheme) {
-      // avoid loop: only update dot highlight
+    // Apply globally via theme manager if not already handling
+    if (
+      window.MemoriumTheme &&
+      typeof window.MemoriumTheme.applyTheme === 'function' &&
+      !applyThemeToCurrent._fromManager
+    ) {
+      try {
+        applyThemeToCurrent._fromManager = true;
+        window.MemoriumTheme.applyTheme(resolved, { syncNotebook: false, persist: true });
+      } finally {
+        applyThemeToCurrent._fromManager = false;
+      }
     }
+    document.dispatchEvent(
+      new CustomEvent('memorium:themechange-notebook', { detail: { theme: resolved } })
+    );
   }
 
   // ============================================================

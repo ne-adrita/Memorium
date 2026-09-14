@@ -152,9 +152,12 @@ describe('Input sanitization & validation', () => {
       });
     expect(res.status).toBe(201);
     expect(res.body.data.title).not.toMatch(/<[^>]*>/);
-    expect(res.body.data.content).not.toMatch(/<[^>]*>/);
+    // Content now allows safe HTML (p, span.pen-written, br) but strips dangerous tags like img/onerror
+    expect(res.body.data.content).not.toMatch(/<img/i);
+    expect(res.body.data.content).not.toMatch(/onerror/i);
+    expect(res.body.data.content).toMatch(/Hello/);
+    expect(res.body.data.content).toMatch(/world/);
     expect(res.body.data.title).toBe('Title');
-    expect(res.body.data.content).toBe('Hello  world');
   });
 
   test('page: invalid pageNumber returns 400 with errors', async () => {

@@ -21,6 +21,17 @@ async function ensurePageOwnership(pageId, userId) {
   return { page, journal };
 }
 
+const THEME_MIGRATION = {
+  parchment: 'classic-leather',
+  vintage: 'sepia-vintage',
+  aged: 'walnut',
+  handwritten: 'blush',
+  rose: 'rose-blush',
+};
+function normalizeTheme(v) {
+  return THEME_MIGRATION[v] || v;
+}
+
 const listPages = asyncHandler(async (req, res) => {
   const { journalId } = req.params;
   if (!journalId)
@@ -57,7 +68,38 @@ const createPage = asyncHandler(async (req, res) => {
   if (!Number.isInteger(num) || num < 1) {
     return res.status(400).json({ success: false, message: 'pageNumber must be an integer >= 1' });
   }
-  if (theme && !['parchment', 'vintage', 'aged', 'handwritten'].includes(theme)) {
+  const ALLOWED_THEMES = [
+    'burgundy-journal',
+    'rose-paper',
+    'scarlet-vintage',
+    'crimson-classic',
+    'midnight-blue',
+    'ocean-blue',
+    'dusty-blue',
+    'royal-blue',
+    'forest-green',
+    'sage-garden',
+    'moss-vintage',
+    'emerald-classic',
+    'plum-velvet',
+    'lavender-paper',
+    'royal-purple',
+    'dusty-violet',
+    'classic-leather',
+    'coffee-brown',
+    'walnut',
+    'sepia-vintage',
+    'rose-blush',
+    'dusty-pink',
+    'blush',
+    'vintage-pink',
+    'parchment',
+    'vintage',
+    'aged',
+    'handwritten',
+    'rose',
+  ];
+  if (theme && !ALLOWED_THEMES.includes(theme)) {
     return res.status(400).json({ success: false, message: 'Invalid theme' });
   }
   try {
@@ -66,7 +108,7 @@ const createPage = asyncHandler(async (req, res) => {
       pageNumber: num,
       title: title || '',
       content: content || '',
-      theme: theme || 'parchment',
+      theme: normalizeTheme(theme) || 'classic-leather',
     });
     res.status(201).json({ success: true, data: page });
   } catch (err) {
@@ -96,10 +138,41 @@ const updatePage = asyncHandler(async (req, res) => {
   if (title !== undefined) update.title = title;
   if (content !== undefined) update.content = content;
   if (theme !== undefined) {
-    if (!['parchment', 'vintage', 'aged', 'handwritten'].includes(theme)) {
+    const ALLOWED2 = [
+      'burgundy-journal',
+      'rose-paper',
+      'scarlet-vintage',
+      'crimson-classic',
+      'midnight-blue',
+      'ocean-blue',
+      'dusty-blue',
+      'royal-blue',
+      'forest-green',
+      'sage-garden',
+      'moss-vintage',
+      'emerald-classic',
+      'plum-velvet',
+      'lavender-paper',
+      'royal-purple',
+      'dusty-violet',
+      'classic-leather',
+      'coffee-brown',
+      'walnut',
+      'sepia-vintage',
+      'rose-blush',
+      'dusty-pink',
+      'blush',
+      'vintage-pink',
+      'parchment',
+      'vintage',
+      'aged',
+      'handwritten',
+      'rose',
+    ];
+    if (!ALLOWED2.includes(theme)) {
       return res.status(400).json({ success: false, message: 'Invalid theme' });
     }
-    update.theme = theme;
+    update.theme = normalizeTheme(theme);
   }
   if (journal !== undefined) {
     if (!isValidObjectId(journal))

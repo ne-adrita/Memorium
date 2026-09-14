@@ -1,9 +1,134 @@
 const { body, validationResult } = require('express-validator');
 
-// Helper to strip HTML tags
+// Helper to strip HTML tags (for titles etc.)
 const stripTags = value => {
   if (typeof value !== 'string') return value;
   return value.replace(/<[^>]*>/g, '');
+};
+
+// Safe HTML sanitizer for page content — allows pen-written spans etc. but blocks XSS
+const sanitizeContent = value => {
+  if (typeof value !== 'string') return value;
+  // Remove script/style blocks entirely
+  let v = value.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+  v = v.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+  const allowedTags = ['p', 'span', 'br', 'div'];
+  const allowedProps = [
+    'color',
+    'background-color',
+    'font-family',
+    'font-style',
+    'font-weight',
+    'font-size',
+    'line-height',
+    'opacity',
+    'padding',
+    'border-radius',
+    'box-decoration-break',
+  ];
+  const allowedPenIds = [
+    'classic-black-ink',
+    'royal-blue-ink',
+    'burgundy-fountain',
+    'forest-green-ink',
+    'graphite-pencil',
+    'soft-black-gel',
+    'golden-highlighter',
+    'rose-ink',
+    'classic-leather',
+    'coffee-brown',
+    'walnut',
+    'sepia-vintage',
+    'rose-blush',
+    'dusty-pink',
+    'blush',
+    'vintage-pink',
+    'burgundy-journal',
+    'rose-paper',
+    'scarlet-vintage',
+    'crimson-classic',
+    'midnight-blue',
+    'ocean-blue',
+    'dusty-blue',
+    'royal-blue',
+    'forest-green',
+    'sage-garden',
+    'moss-vintage',
+    'emerald-classic',
+    'plum-velvet',
+    'lavender-paper',
+    'royal-purple',
+    'dusty-violet',
+  ];
+  v = v.replace(/<\/?([a-zA-Z0-9]+)(\s[^>]*)?>/g, (match, tagName, attrs) => {
+    tagName = tagName.toLowerCase();
+    const isClosing = match.startsWith('</');
+    const isSelfClosing = /\/\s*>$/.test(match);
+    if (!allowedTags.includes(tagName)) return '';
+    if (tagName === 'br') return '<br>';
+    if (isClosing) return `</${tagName}>`;
+    let sanitizedAttrs = '';
+    if (attrs) {
+      const attrRegex = /([a-zA-Z0-9:-]+)\s*=\s*("[^"]*"|'[^']*'|[^\s"'=<>`]+)/g;
+      let m;
+      while ((m = attrRegex.exec(attrs)) !== null) {
+        const name = m[1].toLowerCase();
+        const val = m[2].replace(/^["']|["']$/g, '');
+        if (name.startsWith('on')) continue;
+        if (/javascript:/i.test(val)) continue;
+        if (name === 'style') {
+          const parts = val
+            .split(';')
+            .map(s => s.trim())
+            .filter(Boolean);
+          const clean = [];
+          for (const part of parts) {
+            const colonIdx = part.indexOf(':');
+            if (colonIdx === -1) continue;
+            const pName = part.slice(0, colonIdx).trim().toLowerCase();
+            const pVal = part.slice(colonIdx + 1).trim();
+            if (!allowedProps.includes(pName)) continue;
+            if (/url\s*\(/i.test(pVal) || /expression/i.test(pVal) || /javascript:/i.test(pVal))
+              continue;
+            if (pVal.length > 200) continue;
+            clean.push(`${pName}:${pVal}`);
+          }
+          if (clean.length) sanitizedAttrs += ` style="${clean.join('; ')}"`;
+          continue;
+        }
+        if (name === 'class') {
+          if (!/^[a-zA-Z0-9-_ ]+$/.test(val) || val.length > 120) continue;
+          const classes = val.split(/\s+/).filter(c => c && /^[a-zA-Z0-9-_]+$/.test(c));
+          const allowedClasses = [
+            'pen-written',
+            'page-paragraph',
+            'page-first-letter',
+            'page-writing-area',
+            'page-number',
+          ];
+          const filtered = classes.filter(c => allowedClasses.includes(c) || c.startsWith('page-'));
+          // Always allow pen-written explicitly
+          if (val.split(/\s+/).includes('pen-written') && !filtered.includes('pen-written'))
+            filtered.push('pen-written');
+          if (filtered.length) sanitizedAttrs += ` class="${filtered.join(' ')}"`;
+          continue;
+        }
+        if (name === 'data-pen' || name === 'data-pen-type') {
+          if (/^[a-z0-9-]+$/.test(val) && val.length < 60) {
+            // Optionally validate against known pen ids but allow any safe string
+            sanitizedAttrs += ` ${name}="${val}"`;
+          }
+          continue;
+        }
+        // ignore other attrs (id, etc.)
+      }
+    }
+    if (isSelfClosing && tagName !== 'br') return `<${tagName}${sanitizedAttrs}>`;
+    return `<${tagName}${sanitizedAttrs}>`;
+  });
+  // Final sweep: remove any lingering on*=
+  v = v.replace(/\bon\w+\s*=/gi, '');
+  return v.trim();
 };
 
 // Middleware to return 400 with field-level errors
@@ -86,6 +211,40 @@ const validateJournalCreate = [
     .isLength({ max: 500 })
     .withMessage('Description must be at most 500 characters')
     .customSanitizer(stripTags),
+  body('themeId')
+    .optional()
+    .isIn([
+      'burgundy-journal',
+      'rose-paper',
+      'scarlet-vintage',
+      'crimson-classic',
+      'midnight-blue',
+      'ocean-blue',
+      'dusty-blue',
+      'royal-blue',
+      'forest-green',
+      'sage-garden',
+      'moss-vintage',
+      'emerald-classic',
+      'plum-velvet',
+      'lavender-paper',
+      'royal-purple',
+      'dusty-violet',
+      'classic-leather',
+      'coffee-brown',
+      'walnut',
+      'sepia-vintage',
+      'rose-blush',
+      'dusty-pink',
+      'blush',
+      'vintage-pink',
+      'parchment',
+      'vintage',
+      'aged',
+      'handwritten',
+      'rose',
+    ])
+    .withMessage('Invalid themeId'),
   // cover is optional object; not strictly validated here
   handleValidationErrors,
 ];
@@ -105,6 +264,40 @@ const validateJournalUpdate = [
     .isLength({ max: 500 })
     .withMessage('Description must be at most 500 characters')
     .customSanitizer(stripTags),
+  body('themeId')
+    .optional()
+    .isIn([
+      'burgundy-journal',
+      'rose-paper',
+      'scarlet-vintage',
+      'crimson-classic',
+      'midnight-blue',
+      'ocean-blue',
+      'dusty-blue',
+      'royal-blue',
+      'forest-green',
+      'sage-garden',
+      'moss-vintage',
+      'emerald-classic',
+      'plum-velvet',
+      'lavender-paper',
+      'royal-purple',
+      'dusty-violet',
+      'classic-leather',
+      'coffee-brown',
+      'walnut',
+      'sepia-vintage',
+      'rose-blush',
+      'dusty-pink',
+      'blush',
+      'vintage-pink',
+      'parchment',
+      'vintage',
+      'aged',
+      'handwritten',
+      'rose',
+    ])
+    .withMessage('Invalid themeId'),
   handleValidationErrors,
 ];
 
@@ -127,10 +320,40 @@ const validatePageCreate = [
     .trim()
     .isLength({ max: 50000 })
     .withMessage('Content too long')
-    .customSanitizer(stripTags),
+    .customSanitizer(sanitizeContent),
   body('theme')
     .optional()
-    .isIn(['parchment', 'vintage', 'aged', 'handwritten'])
+    .isIn([
+      'burgundy-journal',
+      'rose-paper',
+      'scarlet-vintage',
+      'crimson-classic',
+      'midnight-blue',
+      'ocean-blue',
+      'dusty-blue',
+      'royal-blue',
+      'forest-green',
+      'sage-garden',
+      'moss-vintage',
+      'emerald-classic',
+      'plum-velvet',
+      'lavender-paper',
+      'royal-purple',
+      'dusty-violet',
+      'classic-leather',
+      'coffee-brown',
+      'walnut',
+      'sepia-vintage',
+      'rose-blush',
+      'dusty-pink',
+      'blush',
+      'vintage-pink',
+      'parchment',
+      'vintage',
+      'aged',
+      'handwritten',
+      'rose',
+    ])
     .withMessage('Invalid theme'),
   handleValidationErrors,
 ];
@@ -152,10 +375,40 @@ const validatePageUpdate = [
     .trim()
     .isLength({ max: 50000 })
     .withMessage('Content too long')
-    .customSanitizer(stripTags),
+    .customSanitizer(sanitizeContent),
   body('theme')
     .optional()
-    .isIn(['parchment', 'vintage', 'aged', 'handwritten'])
+    .isIn([
+      'burgundy-journal',
+      'rose-paper',
+      'scarlet-vintage',
+      'crimson-classic',
+      'midnight-blue',
+      'ocean-blue',
+      'dusty-blue',
+      'royal-blue',
+      'forest-green',
+      'sage-garden',
+      'moss-vintage',
+      'emerald-classic',
+      'plum-velvet',
+      'lavender-paper',
+      'royal-purple',
+      'dusty-violet',
+      'classic-leather',
+      'coffee-brown',
+      'walnut',
+      'sepia-vintage',
+      'rose-blush',
+      'dusty-pink',
+      'blush',
+      'vintage-pink',
+      'parchment',
+      'vintage',
+      'aged',
+      'handwritten',
+      'rose',
+    ])
     .withMessage('Invalid theme'),
   // journal move: validated via controller but also check format
   body('journal').optional().isMongoId().withMessage('Invalid journal ID'),
@@ -164,6 +417,7 @@ const validatePageUpdate = [
 
 module.exports = {
   stripTags,
+  sanitizeContent,
   handleValidationErrors,
   validateRegister,
   validateLogin,

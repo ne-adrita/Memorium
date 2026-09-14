@@ -106,19 +106,69 @@
           }
           if (!apiPages.length) {
             // create initial two pages to match local defaults
+            const resolve = window.MemoriumThemeConfig
+              ? window.MemoriumThemeConfig.resolveThemeId
+              : t => t || 'classic-leather';
+            const journalTheme =
+              (await api
+                .getJournal(journalId)
+                .then(r => r.data && r.data.themeId)
+                .catch(() => null)) ||
+              resolve(
+                localStorage.getItem('memorium_theme') ||
+                  localStorage.getItem('memorium-theme') ||
+                  'classic-leather'
+              );
             const p1 = await api.createPage(journalId, {
               pageNumber: 1,
               title: 'Page 1',
               content: '<p><span class="page-first-letter">D</span>ear Diary…</p>',
-              theme: 'parchment',
+              theme: resolve(journalTheme),
             });
             const p2 = await api.createPage(journalId, {
               pageNumber: 2,
               title: 'Page 2',
               content: '',
-              theme: 'parchment',
+              theme: resolve(journalTheme),
             });
             apiPages = [p1.data, p2.data];
+          }
+        }
+        // Fetch journal-level theme and apply globally (DB is source of truth per spec)
+        let journalThemeId = null;
+        try {
+          const jres = await api.getJournal(journalId);
+          journalThemeId = jres.data && jres.data.themeId;
+        } catch (_) {}
+        const resolveTheme = window.MemoriumThemeConfig
+          ? window.MemoriumThemeConfig.resolveThemeId
+          : t => t || 'classic-leather';
+        if (
+          journalThemeId &&
+          window.MemoriumThemeConfig &&
+          window.MemoriumThemeConfig.isValidTheme(journalThemeId)
+        ) {
+          const norm = resolveTheme(journalThemeId);
+          localStorage.setItem('memorium_theme', norm);
+          try {
+            localStorage.setItem('memorium_journal_theme_' + journalId, norm);
+          } catch (_) {}
+          if (window.MemoriumTheme && window.MemoriumTheme.applyTheme) {
+            // Apply without re-persisting journal (avoid loop)
+            window.MemoriumTheme.applyTheme(norm, { persistJournal: false });
+          }
+        } else if (!journalThemeId) {
+          // No journal theme yet — migrate local theme to journal
+          const localTheme = resolveTheme(
+            localStorage.getItem('memorium_theme') ||
+              localStorage.getItem('memorium-theme') ||
+              'classic-leather'
+          );
+          if (localTheme) {
+            journalThemeId = localTheme;
+            try {
+              await api.updateJournal(journalId, { themeId: localTheme });
+            } catch (_) {}
           }
         }
         // Convert API pages to local state shape
@@ -128,7 +178,7 @@
           pageNumber: p.pageNumber,
           title: p.title,
           content: p.content,
-          theme: p.theme,
+          theme: p.theme || journalThemeId || 'classic-leather',
           decorations: [], // will load per page
         }));
         // Load decorations and images per page
@@ -295,11 +345,19 @@
       // optimistic local, then create on server
       (async () => {
         try {
+          const resolve2 = window.MemoriumThemeConfig
+            ? window.MemoriumThemeConfig.resolveThemeId
+            : t => t || 'classic-leather';
+          const curTheme = resolve2(
+            state.pages[state.currentPageIndex]?.theme ||
+              localStorage.getItem('memorium_theme') ||
+              'classic-leather'
+          );
           const res = await api.createPage(journalId, {
             pageNumber: nextNum,
             title: 'Page ' + nextNum,
             content: '<p><span class="page-first-letter">D</span>ear Diary…</p>',
-            theme: state.pages[state.currentPageIndex]?.theme || 'parchment',
+            theme: curTheme,
           });
           // reload from API to get correct ordering
           await loadFromAPI();
@@ -314,15 +372,26 @@
       return { id: nextNum, pageNumber: nextNum };
     };
 
-    // Also handle theme changes via API
+    // Also handle theme changes via API — page + journal level
     window.addEventListener('memorium:themechange', async e => {
+      const theme = e.detail && (e.detail.theme || e.detail.themeId);
+      if (!theme) return;
+      // Update journal-level theme (source of truth per spec)
+      try {
+        if (window.MemoriumAPI && window.MemoriumAPI.isAuthed()) {
+          await api.updateJournal(journalId, { themeId: theme });
+        }
+      } catch (err) {
+        console.warn('journal theme save failed', err);
+      }
+      // Also update current page theme
       const state = nb.getState();
       const cur = state.pages[state.currentPageIndex];
       if (!cur || !cur._apiId) return;
       try {
-        await api.updatePage(cur._apiId, { theme: e.detail.theme });
+        await api.updatePage(cur._apiId, { theme });
       } catch (err) {
-        console.warn('theme save failed', err);
+        console.warn('page theme save failed', err);
       }
     });
 
