@@ -398,3 +398,180 @@
   .pen-details-panel { padding:0.6rem 0.7rem; }
   .pen-size-btn { font-size:0.72rem; padding:0.28rem 0.4rem; }
 }
+
+/* ============================================================
+   STEP 11G — REALISTIC WRITING DETAILS
+   Subtle handwriting styles, ink behavior, drying, animation
+   Preserves contenteditable, theme, paper, 11E interactions
+   ============================================================ */
+
+/* Base pen-written — ensure ink stays behind cursor */
+.pen-written {
+  display: inline;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  transition:
+    color 0.22s ease,
+    opacity 0.32s ease,
+    filter 0.42s ease,
+    text-shadow 0.32s ease,
+    background-color 0.32s ease;
+  /* subtle settle animation on insertion */
+  animation: inkSettle 0.42s ease-out both;
+}
+
+/* Handwriting style mapping — reuses penConfig style */
+.pen-written.pen-style-casual {
+  font-feature-settings: 'calt' 1;
+  letter-spacing: 0.02em;
+  word-spacing: 0.04em;
+}
+.pen-written.pen-style-soft {
+  letter-spacing: 0.01em;
+  word-spacing: 0.02em;
+}
+.pen-written.pen-style-typewriter {
+  font-family: 'Courier New', Courier, monospace !important;
+  letter-spacing: 0.04em !important;
+  word-spacing: 0.02em !important;
+  font-variant-ligatures: none;
+}
+.pen-written.pen-style-neat {
+  letter-spacing: 0.015em;
+}
+.pen-written.pen-style-elegant {
+  letter-spacing: 0.01em;
+}
+.pen-written.pen-style-bold {
+  letter-spacing: 0.008em;
+}
+
+/* Pen type ink behavior — opacity/thickness/softness handled inline,
+   these classes add the subtle physical feel */
+.pen-written.pen-fountain {
+  /* fountain: crisp, slight bleed – no extra filter */
+  text-shadow: 0 0 0.45px rgba(0, 0, 0, 0.06);
+}
+.pen-written.pen-gel {
+  text-shadow: 0 0 0.35px rgba(0, 0, 0, 0.05);
+}
+.pen-written.pen-pencil {
+  /* softer, gray, less uniform — subtle grain */
+  filter: contrast(0.98) brightness(1.02);
+  text-shadow:
+    0 0 0.7px rgba(0, 0, 0, 0.10),
+    0 0 1.1px rgba(90, 90, 94, 0.07);
+  /* slight unevenness via opacity inherited inline (0.78) */
+}
+.pen-written.pen-highlighter {
+  /* translucent highlight already via inline background-color */
+  padding: 1px 2px 2px;
+  margin: 0 1px;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  /* keep text readable */
+  color: #2F241F !important;
+  /* subtle highlight edge */
+}
+.pen-written.pen-highlighter.fresh-ink {
+  filter: brightness(1.04);
+}
+
+/* Ink drying — very subtle fresh → settled */
+.pen-written.fresh-ink {
+  filter: brightness(1.06) saturate(1.08);
+  opacity: 1;
+  /* slight fresh sheen for fountain/gel */
+}
+.pen-written.pen-fountain.fresh-ink,
+.pen-written.pen-gel.fresh-ink {
+  text-shadow: 0 0 0.7px rgba(0, 0, 0, 0.10);
+}
+.pen-written.pen-pencil.fresh-ink {
+  opacity: 0.92;
+  filter: contrast(0.96) brightness(1.04);
+}
+.pen-written.ink-settled {
+  filter: none;
+  transition: filter 0.9s ease, opacity 0.6s ease, text-shadow 0.6s ease;
+}
+
+/* Writing animation — character appears → ink settles, extremely subtle */
+@keyframes inkSettle {
+  0% {
+    opacity: 0.0;
+    filter: brightness(1.12) saturate(1.12);
+    transform: translateY(0.6px);
+  }
+  35% {
+    opacity: 1;
+    filter: brightness(1.04);
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+    transform: translateY(0);
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pen-written {
+    animation: none !important;
+    transition: none !important;
+  }
+  .pen-written.fresh-ink,
+  .pen-written.ink-settled {
+    filter: none !important;
+  }
+}
+
+/* Ensure writing stays above paper pattern and does not block selection */
+.page-writing-area .pen-written {
+  position: relative;
+  z-index: 1;
+}
+.page-writing-area {
+  caret-color: var(--theme-text, #2F241F);
+}
+/* Highlighter selection should not obscure text */
+.page-writing-area .pen-written.pen-highlighter::selection {
+  background: rgba(224, 195, 80, 0.45);
+}
+
+/* ============================================================
+   STEP 11H — ERASER + HIGHLIGHT TOOLS
+   Translucent highlight behind selected text, subtle vintage
+   ============================================================ */
+.highlight {
+  padding: 1px 2px 2px;
+  margin: 0 1px;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+.highlight-yellow { background-color: rgba(255, 233, 120, 0.42) !important; }
+.highlight-pink { background-color: rgba(255, 180, 180, 0.38) !important; }
+.highlight-blue { background-color: rgba(180, 220, 255, 0.38) !important; }
+.highlight-green { background-color: rgba(180, 235, 180, 0.38) !important; }
+.highlight {
+  /* ensure text remains readable over highlight */
+  color: inherit;
+}
+/* When highlight wraps pen-written, keep inner pen color */
+.highlight .pen-written {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+/* Fresh ink on highlight should be even subtler */
+.highlight.fresh-ink {
+  filter: brightness(1.03);
+}

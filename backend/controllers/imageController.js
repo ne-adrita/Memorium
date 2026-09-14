@@ -45,11 +45,11 @@ const uploadImage = asyncHandler(async (req, res) => {
     rotation = 0;
   if (req.body.x !== undefined) {
     const v = Number(req.body.x);
-    if (!Number.isNaN(v) && v >= 0) x = v;
+    if (!Number.isNaN(v) && v >= 0 && v <= 3000) x = v;
   }
   if (req.body.y !== undefined) {
     const v = Number(req.body.y);
-    if (!Number.isNaN(v) && v >= 0) y = v;
+    if (!Number.isNaN(v) && v >= 0 && v <= 3000) y = v;
   }
   if (req.body.rotation !== undefined) {
     const v = Number(req.body.rotation);
@@ -167,15 +167,22 @@ const updateImage = asyncHandler(async (req, res) => {
   const update = {};
   if (req.body.position) {
     const { x, y } = req.body.position;
-    if (typeof x === 'number' && typeof y === 'number' && x >= 0 && y >= 0) {
+    if (
+      typeof x === 'number' &&
+      typeof y === 'number' &&
+      x >= 0 &&
+      y >= 0 &&
+      x <= 3000 &&
+      y <= 3000
+    ) {
       update.position = { x, y };
     }
   }
   if (req.body.x !== undefined || req.body.y !== undefined) {
-    // Allow flat x,y for multipart? but JSON will have position
     const x = req.body.x !== undefined ? Number(req.body.x) : image.position.x;
     const y = req.body.y !== undefined ? Number(req.body.y) : image.position.y;
-    if (!Number.isNaN(x) && !Number.isNaN(y) && x >= 0 && y >= 0) update.position = { x, y };
+    if (!Number.isNaN(x) && !Number.isNaN(y) && x >= 0 && y >= 0 && x <= 3000 && y <= 3000)
+      update.position = { x, y };
   }
   if (req.body.rotation !== undefined) {
     const v = Number(req.body.rotation);

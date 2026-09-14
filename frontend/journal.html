@@ -50,6 +50,7 @@
     <link rel="stylesheet" href="css/themes.css" />
     <link rel="stylesheet" href="css/pens.css" />
     <link rel="stylesheet" href="css/papers.css" />
+    <link rel="stylesheet" href="css/search.css" />
   </head>
   <body>
     <!-- ============================================================
@@ -158,6 +159,24 @@
             Tip: click to write, double-click canvas for sticky note, drag decorations.
           </p>
         </header>
+        <!-- Search / Find in Diary (11N) — vintage, reuses existing page data, no new backend -->
+        <div class="memorium-search" id="memoriumSearchJournal" role="search" aria-label="Search diary">
+          <div class="memorium-search-input-wrap">
+            <span class="memorium-search-icon" aria-hidden="true">🔍</span>
+            <input
+              type="search"
+              class="memorium-search-input"
+              placeholder="Search writings, titles, moods…"
+              autocomplete="off"
+              aria-label="Search diary"
+              aria-controls="memoriumSearchResultsJournal"
+              aria-expanded="false"
+            />
+            <button type="button" class="memorium-search-clear" aria-label="Clear search" hidden>✕</button>
+          </div>
+          <div class="memorium-search-results" hidden aria-live="polite"></div>
+          <div class="memorium-search-hint" aria-hidden="true">Find pages by text, title, mood, weather or place</div>
+        </div>
         <div style="display: flex; justify-content: center; min-width: 320px">
           <!-- Notebook injected here -->
           <div
@@ -366,6 +385,7 @@
     <script src="js/ambient.js"></script>
     <script src="components/notebook/notebook.js"></script>
     <script src="js/writing.js"></script>
+    <script src="js/search.js"></script>
     <script src="js/journal.js"></script>
     <script src="js/app.js"></script>
 

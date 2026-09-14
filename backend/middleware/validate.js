@@ -25,6 +25,12 @@ const sanitizeContent = value => {
     'padding',
     'border-radius',
     'box-decoration-break',
+    'letter-spacing',
+    'word-spacing',
+    'text-shadow',
+    'filter',
+    'transform',
+    'margin',
   ];
   const allowedPenIds = [
     'classic-black-ink',
@@ -75,7 +81,8 @@ const sanitizeContent = value => {
         const name = m[1].toLowerCase();
         const val = m[2].replace(/^["']|["']$/g, '');
         if (name.startsWith('on')) continue;
-        if (/javascript:/i.test(val)) continue;
+        if (/javascript:/i.test(val) || /vbscript:/i.test(val) || /data:\s*text\/html/i.test(val))
+          continue;
         if (name === 'style') {
           const parts = val
             .split(';')
@@ -105,15 +112,38 @@ const sanitizeContent = value => {
             'page-first-letter',
             'page-writing-area',
             'page-number',
+            'fresh-ink',
+            'ink-settled',
+            'pen-fountain',
+            'pen-gel',
+            'pen-pencil',
+            'pen-highlighter',
+            'pen-style-casual',
+            'pen-style-soft',
+            'pen-style-typewriter',
+            'pen-style-neat',
+            'pen-style-elegant',
+            'pen-style-bold',
+            'highlight',
+            'highlight-yellow',
+            'highlight-pink',
+            'highlight-blue',
+            'highlight-green',
           ];
-          const filtered = classes.filter(c => allowedClasses.includes(c) || c.startsWith('page-'));
+          const filtered = classes.filter(
+            c =>
+              allowedClasses.includes(c) ||
+              c.startsWith('page-') ||
+              c.startsWith('pen-') ||
+              c.startsWith('highlight-')
+          );
           // Always allow pen-written explicitly
           if (val.split(/\s+/).includes('pen-written') && !filtered.includes('pen-written'))
             filtered.push('pen-written');
           if (filtered.length) sanitizedAttrs += ` class="${filtered.join(' ')}"`;
           continue;
         }
-        if (name === 'data-pen' || name === 'data-pen-type') {
+        if (name === 'data-pen' || name === 'data-pen-type' || name === 'data-pen-style') {
           if (/^[a-z0-9-]+$/.test(val) && val.length < 60) {
             // Optionally validate against known pen ids but allow any safe string
             sanitizedAttrs += ` ${name}="${val}"`;
@@ -249,6 +279,48 @@ const validateJournalCreate = [
     .optional()
     .isIn(['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'])
     .withMessage('Invalid paper'),
+  body('isPinned')
+    .optional()
+    .custom(
+      v =>
+        typeof v === 'boolean' ||
+        v === 'true' ||
+        v === 'false' ||
+        v === 1 ||
+        v === 0 ||
+        v === '1' ||
+        v === '0'
+    )
+    .withMessage('isPinned must be boolean')
+    .customSanitizer(v => v === true || v === 'true' || v === 1 || v === '1'),
+  body('pinned')
+    .optional()
+    .custom(
+      v =>
+        typeof v === 'boolean' ||
+        v === 'true' ||
+        v === 'false' ||
+        v === 1 ||
+        v === 0 ||
+        v === '1' ||
+        v === '0'
+    )
+    .withMessage('pinned must be boolean')
+    .customSanitizer(v => v === true || v === 'true' || v === 1 || v === '1'),
+  body('favorite')
+    .optional()
+    .custom(
+      v =>
+        typeof v === 'boolean' ||
+        v === 'true' ||
+        v === 'false' ||
+        v === 1 ||
+        v === 0 ||
+        v === '1' ||
+        v === '0'
+    )
+    .withMessage('favorite must be boolean')
+    .customSanitizer(v => v === true || v === 'true' || v === 1 || v === '1'),
   // cover is optional object; not strictly validated here
   handleValidationErrors,
 ];
@@ -306,6 +378,48 @@ const validateJournalUpdate = [
     .optional()
     .isIn(['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'])
     .withMessage('Invalid paper'),
+  body('isPinned')
+    .optional()
+    .custom(
+      v =>
+        typeof v === 'boolean' ||
+        v === 'true' ||
+        v === 'false' ||
+        v === 1 ||
+        v === 0 ||
+        v === '1' ||
+        v === '0'
+    )
+    .withMessage('isPinned must be boolean')
+    .customSanitizer(v => v === true || v === 'true' || v === 1 || v === '1'),
+  body('pinned')
+    .optional()
+    .custom(
+      v =>
+        typeof v === 'boolean' ||
+        v === 'true' ||
+        v === 'false' ||
+        v === 1 ||
+        v === 0 ||
+        v === '1' ||
+        v === '0'
+    )
+    .withMessage('pinned must be boolean')
+    .customSanitizer(v => v === true || v === 'true' || v === 1 || v === '1'),
+  body('favorite')
+    .optional()
+    .custom(
+      v =>
+        typeof v === 'boolean' ||
+        v === 'true' ||
+        v === 'false' ||
+        v === 1 ||
+        v === 0 ||
+        v === '1' ||
+        v === '0'
+    )
+    .withMessage('favorite must be boolean')
+    .customSanitizer(v => v === true || v === 'true' || v === 1 || v === '1'),
   handleValidationErrors,
 ];
 
@@ -367,6 +481,30 @@ const validatePageCreate = [
     .optional()
     .isIn(['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'])
     .withMessage('Invalid paper'),
+  body('date')
+    .optional({ values: 'null' })
+    .custom(value => {
+      if (value === '' || value === null) return true;
+      const d = new Date(value);
+      return !isNaN(d.getTime());
+    })
+    .withMessage('Invalid date'),
+  body('mood')
+    .optional({ values: 'null' })
+    .customSanitizer(v => (typeof v === 'string' ? v.trim().toLowerCase() : v))
+    .isIn(['happy', 'calm', 'sad', 'angry', 'loved', 'tired', ''])
+    .withMessage('Invalid mood'),
+  body('weather')
+    .optional({ values: 'null' })
+    .customSanitizer(v => (typeof v === 'string' ? v.trim().toLowerCase() : v))
+    .isIn(['sunny', 'rainy', 'cloudy', 'night', ''])
+    .withMessage('Invalid weather'),
+  body('location')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Location must be at most 120 characters')
+    .customSanitizer(stripTags),
   handleValidationErrors,
 ];
 
@@ -426,8 +564,124 @@ const validatePageUpdate = [
     .optional()
     .isIn(['plain', 'ruled', 'dotted', 'grid', 'vintage', 'handmade', 'torn'])
     .withMessage('Invalid paper'),
+  body('date')
+    .optional({ values: 'null' })
+    .custom(value => {
+      if (value === '' || value === null) return true;
+      const d = new Date(value);
+      return !isNaN(d.getTime());
+    })
+    .withMessage('Invalid date'),
+  body('mood')
+    .optional({ values: 'null' })
+    .customSanitizer(v => (typeof v === 'string' ? v.trim().toLowerCase() : v))
+    .isIn(['happy', 'calm', 'sad', 'angry', 'loved', 'tired', ''])
+    .withMessage('Invalid mood'),
+  body('weather')
+    .optional({ values: 'null' })
+    .customSanitizer(v => (typeof v === 'string' ? v.trim().toLowerCase() : v))
+    .isIn(['sunny', 'rainy', 'cloudy', 'night', ''])
+    .withMessage('Invalid weather'),
+  body('location')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Location must be at most 120 characters')
+    .customSanitizer(stripTags),
   // journal move: validated via controller but also check format
   body('journal').optional().isMongoId().withMessage('Invalid journal ID'),
+  handleValidationErrors,
+];
+
+// Decoration validations — server-side enum + length + position bounds
+const validateDecorationCreate = [
+  body('type')
+    .notEmpty()
+    .withMessage('type is required')
+    .isIn(['sticky', 'tape', 'paper', 'flower', 'sticker', 'stamp', 'bookmark', 'clip'])
+    .withMessage('Invalid decoration type'),
+  body('position')
+    .notEmpty()
+    .withMessage('position is required')
+    .custom(v => v && typeof v.x === 'number' && typeof v.y === 'number')
+    .withMessage('position {x,y} numbers are required'),
+  body('position.x')
+    .isFloat({ min: 0, max: 3000 })
+    .withMessage('position.x must be 0..3000')
+    .toFloat(),
+  body('position.y')
+    .isFloat({ min: 0, max: 3000 })
+    .withMessage('position.y must be 0..3000')
+    .toFloat(),
+  body('rotation')
+    .optional()
+    .isFloat({ min: -180, max: 180 })
+    .withMessage('rotation must be -180..180')
+    .toFloat(),
+  body('text')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('text must be string')
+    .isLength({ max: 1000 })
+    .withMessage('Text must be at most 1000 characters')
+    .customSanitizer(stripTags),
+  body('emoji')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('emoji must be string')
+    .isLength({ max: 10 })
+    .withMessage('Emoji must be at most 10 characters')
+    .customSanitizer(stripTags),
+  body('config')
+    .optional()
+    .custom(v => v == null || (typeof v === 'object' && !Array.isArray(v)))
+    .withMessage('config must be object'),
+  handleValidationErrors,
+];
+
+const validateDecorationUpdate = [
+  body('type')
+    .optional()
+    .isIn(['sticky', 'tape', 'paper', 'flower', 'sticker', 'stamp', 'bookmark', 'clip'])
+    .withMessage('Invalid decoration type'),
+  body('position')
+    .optional()
+    .custom(v => !v || (typeof v.x === 'number' && typeof v.y === 'number'))
+    .withMessage('position x,y must be numbers'),
+  body('position.x')
+    .optional()
+    .isFloat({ min: 0, max: 3000 })
+    .withMessage('position.x must be 0..3000')
+    .toFloat(),
+  body('position.y')
+    .optional()
+    .isFloat({ min: 0, max: 3000 })
+    .withMessage('position.y must be 0..3000')
+    .toFloat(),
+  body('rotation')
+    .optional()
+    .isFloat({ min: -180, max: 180 })
+    .withMessage('rotation must be -180..180')
+    .toFloat(),
+  body('text')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('text must be string')
+    .isLength({ max: 1000 })
+    .withMessage('Text must be at most 1000 characters')
+    .customSanitizer(stripTags),
+  body('emoji')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('emoji must be string')
+    .isLength({ max: 10 })
+    .withMessage('Emoji must be at most 10 characters')
+    .customSanitizer(stripTags),
+  body('config')
+    .optional()
+    .custom(v => v == null || (typeof v === 'object' && !Array.isArray(v)))
+    .withMessage('config must be object'),
+  body('page').optional().isMongoId().withMessage('Invalid page ID'),
   handleValidationErrors,
 ];
 
@@ -441,4 +695,6 @@ module.exports = {
   validateJournalUpdate,
   validatePageCreate,
   validatePageUpdate,
+  validateDecorationCreate,
+  validateDecorationUpdate,
 };

@@ -24,6 +24,14 @@ services:
         value: 7d
       - key: FRONTEND_URL
         sync: false
-      # Optional: set SERVE_FRONTEND=true if you want this service to also serve the frontend static files
+      - key: STORAGE_DRIVER
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      # Optional: set SERVE_FRONTEND=true if you want this service to also serve the frontend static files (single-service deploy)
       # - key: SERVE_FRONTEND
       #   value: true

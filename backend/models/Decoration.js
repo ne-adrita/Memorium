@@ -11,7 +11,7 @@ const decorationSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Decoration type is required'],
       enum: {
-        values: ['sticky', 'sticker', 'paper', 'flower', 'tape'],
+        values: ['sticky', 'tape', 'paper', 'flower', 'sticker', 'stamp', 'bookmark', 'clip'],
         message: '{VALUE} is not a valid decoration type',
       },
     },
@@ -20,16 +20,18 @@ const decorationSchema = new mongoose.Schema(
         type: Number,
         required: [true, 'X position is required'],
         min: 0,
+        max: 3000,
       },
       y: {
         type: Number,
         required: [true, 'Y position is required'],
         min: 0,
+        max: 3000,
       },
     },
     size: {
-      width: { type: Number, min: 0, default: null },
-      height: { type: Number, min: 0, default: null },
+      width: { type: Number, min: 0, max: 3000, default: null },
+      height: { type: Number, min: 0, max: 3000, default: null },
     },
     rotation: {
       type: Number,

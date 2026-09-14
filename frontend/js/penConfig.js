@@ -127,12 +127,27 @@
       style: 'soft',
       description: 'Muted rose ink — tender and romantic',
     },
+    'typewriter-ink': {
+      id: 'typewriter-ink',
+      name: 'Typewriter Ink',
+      type: 'gel',
+      color: '#2F241F',
+      opacity: 0.97,
+      size: 'medium',
+      fontFamily: "'Courier New', Courier, monospace",
+      fontStyle: 'normal',
+      fontWeight: 500,
+      lineHeight: 1.6,
+      writingSound: 'gel-writing',
+      style: 'typewriter',
+      description: 'Crisp typewriter — steady and mechanical',
+    },
   };
 
   const ALL_PEN_IDS = Object.keys(PENS);
   const PEN_TYPES = ['fountain', 'gel', 'pencil', 'highlighter'];
   const PEN_SIZES = ['fine', 'medium', 'bold'];
-  const PEN_STYLES = ['elegant', 'casual', 'neat', 'soft', 'bold'];
+  const PEN_STYLES = ['elegant', 'casual', 'neat', 'soft', 'bold', 'typewriter'];
   const DEFAULT_PEN = 'classic-black-ink';
 
   const SIZE_MAP = {

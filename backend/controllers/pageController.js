@@ -38,6 +38,26 @@ function normalizePaper(v) {
   return PAPER_IDS.includes(v) ? v : 'plain';
 }
 
+const MOODS = ['happy', 'calm', 'sad', 'angry', 'loved', 'tired'];
+const WEATHERS = ['sunny', 'rainy', 'cloudy', 'night'];
+function normalizeMood(v) {
+  if (v == null || v === '') return null;
+  const s = String(v).trim().toLowerCase();
+  return MOODS.includes(s) ? s : null;
+}
+function normalizeWeather(v) {
+  if (v == null || v === '') return null;
+  const s = String(v).trim().toLowerCase();
+  return WEATHERS.includes(s) ? s : null;
+}
+function normalizeLocation(v) {
+  if (v == null) return '';
+  const s = String(v)
+    .trim()
+    .replace(/<[^>]*>/g, '');
+  return s.slice(0, 120);
+}
+
 const listPages = asyncHandler(async (req, res) => {
   const { journalId } = req.params;
   if (!journalId)
@@ -66,7 +86,7 @@ const createPage = asyncHandler(async (req, res) => {
   const { error } = await ensureJournalOwnership(journalId, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
 
-  const { pageNumber, title, content, theme, paper } = req.body;
+  const { pageNumber, title, content, theme, paper, date, mood, weather, location } = req.body;
   if (pageNumber === undefined || pageNumber === null) {
     return res.status(400).json({ success: false, message: 'pageNumber is required' });
   }
@@ -111,6 +131,25 @@ const createPage = asyncHandler(async (req, res) => {
   if (paper && !PAPER_IDS.includes(paper)) {
     return res.status(400).json({ success: false, message: 'Invalid paper' });
   }
+  if (mood && !MOODS.includes(String(mood).trim().toLowerCase())) {
+    return res.status(400).json({ success: false, message: 'Invalid mood' });
+  }
+  if (weather && !WEATHERS.includes(String(weather).trim().toLowerCase())) {
+    return res.status(400).json({ success: false, message: 'Invalid weather' });
+  }
+  if (location && String(location).length > 120) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'Location must be at most 120 characters' });
+  }
+  // date validated via middleware isISO, but also check here for null/empty
+  let dateVal = null;
+  if (date !== undefined && date !== null && date !== '') {
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+      return res.status(400).json({ success: false, message: 'Invalid date' });
+    dateVal = d;
+  }
   try {
     const page = await Page.create({
       journal: journalId,
@@ -119,6 +158,10 @@ const createPage = asyncHandler(async (req, res) => {
       content: content || '',
       theme: normalizeTheme(theme) || 'classic-leather',
       paper: normalizePaper(paper) || 'plain',
+      date: dateVal,
+      mood: normalizeMood(mood),
+      weather: normalizeWeather(weather),
+      location: normalizeLocation(location),
     });
     res.status(201).json({ success: true, data: page });
   } catch (err) {
@@ -137,7 +180,8 @@ const updatePage = asyncHandler(async (req, res) => {
   const { error } = await ensurePageOwnership(id, req.user.id);
   if (error) return res.status(error.status).json({ success: false, message: error.message });
 
-  const { pageNumber, title, content, theme, paper, journal } = req.body;
+  const { pageNumber, title, content, theme, paper, date, mood, weather, location, journal } =
+    req.body;
   const update = {};
   if (pageNumber !== undefined) {
     const num = Number(pageNumber);
@@ -189,6 +233,43 @@ const updatePage = asyncHandler(async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid paper' });
     }
     update.paper = paper;
+  }
+  if (date !== undefined) {
+    if (date === null || date === '') update.date = null;
+    else {
+      const d = new Date(date);
+      if (isNaN(d.getTime()))
+        return res.status(400).json({ success: false, message: 'Invalid date' });
+      update.date = d;
+    }
+  }
+  if (mood !== undefined) {
+    if (mood === null || mood === '') update.mood = null;
+    else {
+      const m = String(mood).trim().toLowerCase();
+      if (!MOODS.includes(m))
+        return res.status(400).json({ success: false, message: 'Invalid mood' });
+      update.mood = m;
+    }
+  }
+  if (weather !== undefined) {
+    if (weather === null || weather === '') update.weather = null;
+    else {
+      const w = String(weather).trim().toLowerCase();
+      if (!WEATHERS.includes(w))
+        return res.status(400).json({ success: false, message: 'Invalid weather' });
+      update.weather = w;
+    }
+  }
+  if (location !== undefined) {
+    if (location === null || location === '') update.location = '';
+    else {
+      const loc = String(location)
+        .trim()
+        .replace(/<[^>]*>/g, '')
+        .slice(0, 120);
+      update.location = loc;
+    }
   }
   if (journal !== undefined) {
     if (!isValidObjectId(journal))

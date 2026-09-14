@@ -1,0 +1,19 @@
+# Netlify deployment for Memorium frontend (static)
+# Publish the plain HTML/CSS/JS in frontend/ — no build step required
+[build]
+  publish = "frontend"
+  command = "echo 'No build required — static frontend'"
+
+# SPA fallback: deep links (e.g. /journal.html?journalId=...) should still serve the file;
+# unknown paths fallback to index.html (kept compatible with frontend/_redirects)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Allow frontend to call backend API (CORS is configured via FRONTEND_URL on backend)
+# Set the backend URL at deploy time by injecting a snippet before js/config.js:
+# In Netlify UI: Site settings → Build & deploy → Post processing → Snippet injection
+# Add before </head>:
+#   <script>window.__MEMORIUM_API_URL="https://your-backend.onrender.com"</script>
+# Alternatively, edit frontend/js/config.js and set window.__MEMORIUM_API_URL directly before deploying.

@@ -36,6 +36,202 @@
     } catch (_) {}
   }
 
+  // Highlight colors — vintage diary aesthetic, translucent
+  const HIGHLIGHT_COLORS = {
+    yellow: 'rgba(255,233,120,0.42)',
+    pink: 'rgba(255,180,180,0.38)',
+    blue: 'rgba(180,220,255,0.38)',
+    green: 'rgba(180,235,180,0.38)',
+  };
+
+  function getActiveWritingArea() {
+    const active = document.activeElement;
+    if (active && active.classList && active.classList.contains('page-writing-area')) return active;
+    const areas = getWritingAreas();
+    // prefer focused, else first visible
+    return areas.find(a => a === active) || areas[0] || null;
+  }
+
+  function eraseSelection() {
+    try {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+        if (window.MemoriumUtils) window.MemoriumUtils.showToast('Select text to erase', 'info');
+        return false;
+      }
+      const range = sel.getRangeAt(0);
+      const area = getActiveWritingArea();
+      if (
+        !area ||
+        (!area.contains(range.commonAncestorContainer) && !area.contains(range.startContainer))
+      ) {
+        if (window.MemoriumUtils)
+          window.MemoriumUtils.showToast('Select text inside page to erase', 'info');
+        return false;
+      }
+      // Prevent deleting decorations or page elements outside writing area
+      // Ensure range does not span outside area
+      if (!area.contains(range.startContainer) || !area.contains(range.endContainer)) {
+        // Clamp to inside area
+        return false;
+      }
+      // Save before for undo? not needed
+      range.deleteContents();
+      // Clean empty pen spans
+      setTimeout(() => {
+        if (area._penWritingAttached) {
+          // reuse merge logic
+          const spans = area.querySelectorAll('span.pen-written');
+          spans.forEach(s => {
+            if (!s.textContent && s.childNodes.length === 0) s.remove();
+          });
+          // Merge adjacent
+          if (window.MemoriumWriting && window.MemoriumWriting.mergeAdjacentSpans) {
+            // will be available after init, but we can call local
+          }
+        }
+        area.dispatchEvent(new Event('input', { bubbles: true }));
+        // Ensure autosave triggered via input
+      }, 0);
+      // Collapse selection
+      sel.collapseToStart();
+      area.dispatchEvent(new Event('input', { bubbles: true }));
+      if (window.MemoriumUtils) window.MemoriumUtils.showToast('Erased', 'success');
+      return true;
+    } catch (e) {
+      console.warn('erase failed', e);
+      return false;
+    }
+  }
+
+  function highlightSelection(colorId) {
+    try {
+      const color = HIGHLIGHT_COLORS[colorId] || HIGHLIGHT_COLORS.yellow;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+        if (window.MemoriumUtils)
+          window.MemoriumUtils.showToast('Select text to highlight', 'info');
+        return false;
+      }
+      const range = sel.getRangeAt(0);
+      const area = getActiveWritingArea();
+      if (
+        !area ||
+        (!area.contains(range.commonAncestorContainer) && !area.contains(range.startContainer))
+      ) {
+        if (window.MemoriumUtils)
+          window.MemoriumUtils.showToast('Select text inside page to highlight', 'info');
+        return false;
+      }
+      if (!area.contains(range.startContainer) || !area.contains(range.endContainer)) return false;
+      // Extract selected fragment
+      const fragment = range.extractContents();
+      if (!fragment || fragment.textContent.trim() === '') {
+        // Empty selection after extract?
+        range.insertNode(fragment);
+        return false;
+      }
+      // Create highlight wrapper — translucent background behind selected text, readable text
+      const hl = document.createElement('span');
+      hl.className = 'pen-written highlight highlight-' + colorId;
+      hl.setAttribute('data-highlight', colorId);
+      hl.style.backgroundColor = color;
+      hl.style.padding = '0 2px';
+      hl.style.borderRadius = '3px';
+      hl.style.boxDecorationBreak = 'clone';
+      hl.style.webkitBoxDecorationBreak = 'clone';
+      // Preserve existing formatting: fragment may contain pen-written spans, keep them nested
+      hl.appendChild(fragment);
+      range.insertNode(hl);
+      // Select highlight for UX
+      sel.removeAllRanges();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(hl);
+      sel.addRange(newRange);
+      // Trigger autosave
+      area.dispatchEvent(new Event('input', { bubbles: true }));
+      setTimeout(() => {
+        // Normalize and merge if adjacent same highlight?
+        area.dispatchEvent(new Event('input', { bubbles: true }));
+      }, 10);
+      if (window.MemoriumUtils) window.MemoriumUtils.showToast('Highlighted ' + colorId, 'success');
+      return true;
+    } catch (e) {
+      console.warn('highlight failed', e);
+      return false;
+    }
+  }
+
+  function clearHighlightFromSelection() {
+    try {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+        if (window.MemoriumUtils)
+          window.MemoriumUtils.showToast('Select highlighted text to clear', 'info');
+        return false;
+      }
+      const range = sel.getRangeAt(0);
+      const area = getActiveWritingArea();
+      if (!area || !area.contains(range.commonAncestorContainer)) return false;
+      // Find highlight ancestors in selection — unwrap them
+      // First try to find closest highlight around selection
+      let found = false;
+      const highlights = area.querySelectorAll('.highlight');
+      highlights.forEach(hl => {
+        if (!area.contains(hl)) return;
+        // Check if highlight intersects selection
+        const hlRange = document.createRange();
+        try {
+          hlRange.selectNode(hl);
+        } catch (_) {
+          return;
+        }
+        const common = sel.rangeCount ? sel.getRangeAt(0) : null;
+        if (!common) return;
+        // Intersects if ranges overlap
+        if (
+          common.compareBoundaryPoints(Range.END_TO_START, hlRange) < 0 &&
+          common.compareBoundaryPoints(Range.START_TO_END, hlRange) > 0
+        ) {
+          // Unwrap
+          const parent = hl.parentNode;
+          if (!parent) return;
+          while (hl.firstChild) parent.insertBefore(hl.firstChild, hl);
+          hl.remove();
+          found = true;
+        }
+      });
+      if (found) {
+        area.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.MemoriumUtils) window.MemoriumUtils.showToast('Highlight cleared', 'success');
+        return true;
+      }
+      // Fallback: extract and strip highlight wrappers from fragment
+      const fragment = range.extractContents();
+      if (fragment) {
+        const temp = document.createElement('div');
+        temp.appendChild(fragment);
+        temp.querySelectorAll('.highlight').forEach(el => {
+          const p = el.parentNode;
+          if (!p) return;
+          while (el.firstChild) p.insertBefore(el.firstChild, el);
+          p.removeChild(el);
+        });
+        // Insert cleaned fragment back
+        const frag = document.createDocumentFragment();
+        while (temp.firstChild) frag.appendChild(temp.firstChild);
+        range.insertNode(frag);
+        area.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.MemoriumUtils) window.MemoriumUtils.showToast('Highlight cleared', 'success');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.warn('clear highlight failed', e);
+      return false;
+    }
+  }
+
   function hexToRgba(hex, opacity) {
     if (!hex) return `rgba(0,0,0,${opacity})`;
     const h = hex.replace('#', '').trim();
@@ -59,41 +255,109 @@
     const cfg = penCfg();
     const sizePx = cfg && cfg.SIZE_MAP && cfg.SIZE_MAP[pen.size] ? cfg.SIZE_MAP[pen.size].px : 18;
     const styleParts = [];
-    // Font
-    if (pen.fontFamily) styleParts.push(`font-family:${pen.fontFamily}`);
-    if (pen.fontStyle) styleParts.push(`font-style:${pen.fontStyle}`);
-    if (pen.fontWeight) styleParts.push(`font-weight:${pen.fontWeight}`);
-    if (pen.lineHeight) styleParts.push(`line-height:${pen.lineHeight}`);
-    styleParts.push(`font-size:${sizePx}px`);
+    // Font — map handwriting styles to families if not already set by pen
+    // Spec styles: Casual, Handwritten, Fountain, Neat, Typewriter — reuse pen.style
+    let fontFamily = pen.fontFamily;
+    let fontStyle = pen.fontStyle;
+    let fontWeight = pen.fontWeight;
+    let lineHeight = pen.lineHeight;
+    let letterSpacing = '';
+    let wordSpacing = '';
+    // Style-specific overrides (keep pen's explicit values where present, but adjust for realism)
+    if (pen.style === 'casual') {
+      fontFamily = fontFamily || "'Caveat', cursive";
+      letterSpacing = '0.02em';
+      wordSpacing = '0.04em';
+    } else if (pen.style === 'soft') {
+      // Handwritten soft — tender, slightly looser
+      fontFamily = fontFamily || "'Caveat', cursive";
+      letterSpacing = '0.01em';
+      lineHeight = lineHeight || 1.7;
+    } else if (pen.style === 'typewriter') {
+      fontFamily = "'Courier New', Courier, monospace";
+      fontStyle = 'normal';
+      fontWeight = 500;
+      letterSpacing = '0.04em';
+      wordSpacing = '0.02em';
+      lineHeight = 1.6;
+    } else if (pen.style === 'neat') {
+      letterSpacing = '0.015em';
+      lineHeight = lineHeight || 1.55;
+    } else if (pen.style === 'elegant' || pen.style === 'bold') {
+      // Fountain elegant — keep as is, slight tracking
+      letterSpacing = '0.01em';
+    }
 
+    if (fontFamily) styleParts.push(`font-family:${fontFamily}`);
+    if (fontStyle) styleParts.push(`font-style:${fontStyle}`);
+    if (fontWeight) styleParts.push(`font-weight:${fontWeight}`);
+    if (lineHeight) styleParts.push(`line-height:${lineHeight}`);
+    styleParts.push(`font-size:${sizePx}px`);
+    if (letterSpacing) styleParts.push(`letter-spacing:${letterSpacing}`);
+    if (wordSpacing) styleParts.push(`word-spacing:${wordSpacing}`);
+
+    // Ink behavior per type — subtle differences in opacity/thickness/softness
     if (pen.type === 'highlighter') {
-      // Highlighter: translucent background, keep text readable
       const bg = hexToRgba(pen.color, pen.opacity);
-      // Use dark text on highlight — preserve readability
       styleParts.push(`background-color:${bg}`);
       styleParts.push(`color:#2F241F`);
       styleParts.push(`padding:0 2px`);
       styleParts.push(`border-radius:3px`);
       styleParts.push(`box-decoration-break:clone`);
+      // highlighter is translucent, no shadow, slightly soft edge via box
+      styleParts.push(`--pen-highlight:${bg}`);
+    } else if (pen.type === 'pencil') {
+      styleParts.push(`color:${pen.color}`);
+      // Pencil: softer, gray, less uniform — subtle text-shadow + filter
+      if (pen.opacity !== undefined && pen.opacity !== null)
+        styleParts.push(`opacity:${pen.opacity}`);
+      // soft graphite texture
+      styleParts.push(`text-shadow:0 0 0.6px rgba(0,0,0,0.12), 0 0 1px rgba(90,90,94,0.08)`);
+      // slight unevenness via opacity variation already; filter handled in CSS class
+    } else if (pen.type === 'fountain') {
+      styleParts.push(`color:${pen.color}`);
+      if (pen.opacity !== undefined && pen.opacity < 0.99)
+        styleParts.push(`opacity:${pen.opacity}`);
+      // Fountain: slight ink bleed softness, deeper color
+      if (pen.color === '#1A1A1E' || pen.color === '#6B2342') {
+        styleParts.push(`text-shadow:0 0 0.4px rgba(0,0,0,0.08)`);
+      }
+    } else if (pen.type === 'gel') {
+      styleParts.push(`color:${pen.color}`);
+      if (pen.opacity !== undefined && pen.opacity < 0.99)
+        styleParts.push(`opacity:${pen.opacity}`);
+      // Gel: slightly heavier, crisp
+      styleParts.push(`text-shadow:0 0 0.3px rgba(0,0,0,0.06)`);
+      // slightly thicker via weight already 600
     } else {
       styleParts.push(`color:${pen.color}`);
-      // opacity for pencil soft etc.
-      if (pen.opacity !== undefined && pen.opacity !== null && pen.opacity < 0.99) {
+      if (pen.opacity !== undefined && pen.opacity < 0.99)
         styleParts.push(`opacity:${pen.opacity}`);
-      }
     }
     return styleParts.join('; ');
   }
 
   function createPenSpan(pen, text) {
     const span = document.createElement('span');
-    span.className = 'pen-written';
+    // Base + type/style classes for CSS-driven realism (pencil, highlighter, fresh ink)
+    const extra = ` pen-${pen.type} pen-style-${pen.style || 'elegant'}`;
+    span.className = 'pen-written' + extra + ' fresh-ink';
     span.setAttribute('data-pen', pen.id);
     span.setAttribute('data-pen-type', pen.type);
-    // Avoid duplicating style string excessively — keep minimal necessary
+    span.setAttribute('data-pen-style', pen.style || 'elegant');
     const style = getPenInlineStyle(pen);
     if (style) span.setAttribute('style', style);
     if (text !== undefined && text !== null) span.textContent = text;
+    // Ink drying — very subtle: fresh ink settles to normal after ~900ms
+    // Do not interfere with cursor/selection — class only affects visual, no layout change
+    if (span.animate) {
+      // Prefer CSS transition; JS just removes class after delay for settling
+    }
+    setTimeout(() => {
+      span.classList.remove('fresh-ink');
+      span.classList.add('ink-settled');
+    }, 900);
+    // Writing animation is CSS-driven via .pen-written { animation: inkSettle ... } on insertion
     return span;
   }
 
@@ -442,6 +706,87 @@
     }
   }
 
+  function ensureWritingToolsUI() {
+    if (document.getElementById('writing-tools-bar'))
+      return document.getElementById('writing-tools-bar');
+    const notebook = document.querySelector('.notebook');
+    if (!notebook) return null;
+    // Inject toolbar styles if not present
+    if (!document.getElementById('memorium-writing-tools-style')) {
+      const style = document.createElement('style');
+      style.id = 'memorium-writing-tools-style';
+      style.textContent = `
+        .writing-tools-bar{display:flex;gap:0.5rem;align-items:center;justify-content:center;flex-wrap:wrap;padding:0.7rem 0.9rem;margin:0.8rem auto;background:linear-gradient(180deg,#FFFEFB 0%,#FFF8F0 100%),repeating-linear-gradient(0deg,transparent,transparent 26px,rgba(107,79,59,0.015) 26px,rgba(107,79,59,0.015) 27px);border:1px solid var(--theme-border,#DDD1BF);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,0.06),0 2px 6px rgba(0,0,0,0.04),inset 0 1px 0 rgba(255,255,255,0.9);max-width:560px;position:relative;overflow:hidden}
+        .writing-tools-bar::before{content:'';position:absolute;top:0;left:18px;bottom:0;width:1px;background:rgba(201,162,39,0.14);pointer-events:none;}
+        .writing-tools-label{font-family:var(--heading-font,'Cormorant Garamond',serif);font-size:0.78rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted,#6E6259);margin-right:0.2rem}
+        .writing-tool-btn{padding:0.45rem 0.75rem;border-radius:999px;border:1.5px solid var(--theme-border,#DDD1BF);background:#FFFEFB;font-family:var(--heading-font,'Cormorant Garamond',serif);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.18s ease;display:inline-flex;align-items:center;gap:0.35rem}
+        .writing-tool-btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,0.06);border-color:rgba(107,79,59,0.18)}
+        .writing-tool-btn:active{transform:translateY(0) scale(0.98)}
+        .writing-tool-btn:focus-visible{outline:2px solid var(--theme-accent,#C9A227);outline-offset:2px}
+        .writing-tool-btn--eraser.active{border-color:var(--theme-accent,#C9A227);background:#FFFEFB;box-shadow:0 0 0 3px rgba(201,162,39,0.14)}
+        .highlight-colors{display:flex;gap:0.35rem;align-items:center;margin-left:0.2rem}
+        .highlight-color-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.9);cursor:pointer;box-shadow:inset 0 1px 1px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.12);transition:transform 0.18s ease,box-shadow 0.18s ease}
+        .highlight-color-btn:hover{transform:scale(1.08);box-shadow:inset 0 1px 1px rgba(0,0,0,0.08),0 3px 8px rgba(0,0,0,0.14)}
+        .highlight-color-btn:focus-visible{outline:2px solid var(--theme-accent,#C9A227);outline-offset:2px}
+        .highlight-color-btn:active{transform:scale(0.96)}
+        .highlight-clear-btn{padding:0.38rem 0.7rem;font-size:0.76rem}
+        @media(max-width:768px){.writing-tools-bar{padding:0.6rem 0.7rem;margin:0.6rem auto;gap:0.45rem} .highlight-color-btn{width:26px;height:26px}}
+      `;
+      document.head.appendChild(style);
+    }
+    const bar = document.createElement('div');
+    bar.id = 'writing-tools-bar';
+    bar.className = 'writing-tools-bar';
+    bar.setAttribute('role', 'toolbar');
+    bar.setAttribute('aria-label', 'Writing tools');
+    bar.innerHTML = `
+      <span class="writing-tools-label">Tools</span>
+      <button type="button" class="writing-tool-btn writing-tool-btn--eraser" data-tool="eraser" aria-label="Eraser — delete selected text" title="Select text and click to erase">🧽 Eraser</button>
+      <span class="writing-tools-label" style="margin-left:0.4rem">Highlight</span>
+      <span class="highlight-colors" role="group" aria-label="Highlight colors">
+        <button type="button" class="highlight-color-btn" data-highlight="yellow" aria-label="Highlight yellow" title="Highlight yellow" style="background:rgba(255,233,120,0.55)"></button>
+        <button type="button" class="highlight-color-btn" data-highlight="pink" aria-label="Highlight pink" title="Highlight pink" style="background:rgba(255,180,180,0.55)"></button>
+        <button type="button" class="highlight-color-btn" data-highlight="blue" aria-label="Highlight blue" title="Highlight blue" style="background:rgba(180,220,255,0.55)"></button>
+        <button type="button" class="highlight-color-btn" data-highlight="green" aria-label="Highlight green" title="Highlight green" style="background:rgba(180,235,180,0.55)"></button>
+      </span>
+      <button type="button" class="writing-tool-btn highlight-clear-btn" data-tool="clear-highlight" aria-label="Clear highlight" title="Select highlighted text to clear">Clear</button>
+    `;
+    // Insert near notebook: after pen holder if exists, else after notebook
+    const penHolder = document.getElementById('pen-holder-system');
+    const paperSystem = document.getElementById('paper-system');
+    const anchor = penHolder || paperSystem || document.querySelector('.theme-family-system');
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(bar, anchor.nextSibling);
+      // Ensure paper system after pen holder, writing tools after paper? order: theme -> pen -> paper -> writing tools -> sound -> notebook
+      // But insertion logic above puts writing tools after penHolder if exists; if paperSystem exists after, it will be before paper — that's okay but we want consistent
+      // Try to place after paper if paper exists, otherwise after pen
+      const paperEl = document.getElementById('paper-system');
+      if (paperEl && paperEl !== bar && bar.parentNode) {
+        // move bar after paper
+        bar.parentNode.insertBefore(bar, paperEl.nextSibling);
+      }
+    } else {
+      const parent = notebook.parentNode;
+      parent.insertBefore(bar, notebook.nextSibling);
+    }
+    // Wire events
+    const eraserBtn = bar.querySelector('[data-tool="eraser"]');
+    if (eraserBtn) eraserBtn.addEventListener('click', eraseSelection);
+    bar.querySelectorAll('[data-highlight]').forEach(btn => {
+      btn.addEventListener('click', () => highlightSelection(btn.dataset.highlight));
+    });
+    const clearBtn = bar.querySelector('[data-tool="clear-highlight"]');
+    if (clearBtn) clearBtn.addEventListener('click', clearHighlightFromSelection);
+    // Also add keyboard shortcuts: Delete for eraser when selection, Ctrl+H for highlight yellow?
+    document.addEventListener('keydown', e => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && e.altKey) {
+        // Alt+Delete as eraser shortcut — not interfering with normal delete
+        // We do not override normal delete, just provide shortcut
+      }
+    });
+    return bar;
+  }
+
   function initWritingEngine() {
     const areas = getWritingAreas();
     if (!areas.length) {
@@ -473,6 +818,7 @@
     });
 
     ensurePenIndicator();
+    ensureWritingToolsUI();
 
     // Expose for testing
     window.MemoriumWriting = {
@@ -482,6 +828,10 @@
       insertTextWithPen,
       mergeAdjacentSpans,
       hexToRgba,
+      eraseSelection,
+      highlightSelection,
+      clearHighlightFromSelection,
+      HIGHLIGHT_COLORS,
     };
   }
 

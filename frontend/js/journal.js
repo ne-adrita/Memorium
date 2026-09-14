@@ -9,6 +9,47 @@
     return localStorage.getItem('memorium-current-journal');
   }
 
+  // 11N — parse requested page from URL (supports page, pageNumber, pageId)
+  function getRequestedPageParams() {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      return {
+        page: sp.get('page') || sp.get('pageNumber') || sp.get('pageNum'),
+        pageId: sp.get('pageId') || sp.get('page_id'),
+      };
+    } catch (e) {
+      return { page: null, pageId: null };
+    }
+  }
+
+  function findPageIndex(statePages, req) {
+    if (!statePages || !statePages.length || !req) return -1;
+    const targetNum = req.page != null ? String(req.page).trim() : null;
+    const targetId = req.pageId != null ? String(req.pageId).trim() : null;
+    if (targetId) {
+      for (let i = 0; i < statePages.length; i++) {
+        const p = statePages[i];
+        const pid = p._apiId || p._id || String(p.id || '');
+        if (String(pid) === targetId) return i;
+      }
+    }
+    if (targetNum) {
+      // numeric pageNumber match
+      const num = Number(targetNum);
+      if (!isNaN(num)) {
+        for (let k = 0; k < statePages.length; k++) {
+          if (statePages[k].pageNumber === num || statePages[k].id === num) return k;
+        }
+      }
+      // fallback string match on pageNumber or title
+      for (let j = 0; j < statePages.length; j++) {
+        const pj = statePages[j];
+        if (String(pj.pageNumber) === targetNum || String(pj.id) === targetNum) return j;
+      }
+    }
+    return -1;
+  }
+
   function showStatus(msg, isError) {
     const sec = document.getElementById('notebook-section');
     if (!sec) return;
@@ -220,6 +261,10 @@
           content: p.content,
           theme: p.theme || journalThemeId || 'classic-leather',
           paper: p.paper || journalPaperId || 'plain',
+          date: p.date || null,
+          mood: p.mood || null,
+          weather: p.weather || null,
+          location: p.location || '',
           decorations: [], // will load per page
         }));
         // Load decorations and images per page
@@ -262,6 +307,21 @@
         } catch {}
         // Re-render via notebook's internal function (trigger via loadPage)
         if (window.loadPage) window.loadPage(0);
+        // 11N — if URL requests a specific page, open it (reuse existing navigation flow)
+        try {
+          const req = getRequestedPageParams();
+          if ((req.page || req.pageId) && window.loadPage) {
+            const targetIdx = findPageIndex(newPages, req);
+            if (targetIdx >= 0 && targetIdx < newPages.length) {
+              window.loadPage(targetIdx);
+              // ensure scroll to notebook after slight delay
+              setTimeout(function () {
+                const sec = document.getElementById('notebook-section');
+                if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 300);
+            }
+          }
+        } catch (e) {}
         // Also refresh decorations rendering
         showStatus('Loaded ' + newPages.length + ' pages from cloud', false);
       } catch (e) {
@@ -270,7 +330,7 @@
       }
     }
 
-    // Override savePage to also PUT to API (debounced every 5s, vintage toast)
+    // Override savePage to also PUT to API — notebook already debounces 5s, so use short 800ms here for total ~5.8s
     let saveTimeout = null;
     let lastToast = 0;
     window.savePage = function () {
@@ -280,18 +340,35 @@
       const cur = state.pages[state.currentPageIndex];
       if (!cur || !cur._apiId) return;
       clearTimeout(saveTimeout);
-      // show subtle saving indicator after 5s debounce
+      // short debounce to batch rapid edits, autosave toast throttled
       saveTimeout = setTimeout(async () => {
         const nbEl = document.querySelector('.notebook');
         const loader =
           window.MemoriumUtils && nbEl ? window.MemoriumUtils.showLoading(nbEl, 'Saving…') : null;
         try {
-          // Get current content from DOM
-          const area =
-            document.querySelector(`.notebook-page[data-page="${cur.id}"] .page-writing-area`) ||
-            document.querySelector('.page-writing-area');
+          // Get current content from correctly-mapped visible slot (supports N>2 via spread)
+          let area = document.querySelector(
+            `.notebook-page[data-page="${cur.id}"] .page-writing-area`
+          );
+          if (!area) {
+            const isLeft = state.currentPageIndex % 2 === 0;
+            const slotEl = isLeft
+              ? document.querySelector('.notebook-page--left')
+              : document.querySelector('.notebook-page--right');
+            area = slotEl
+              ? slotEl.querySelector('.page-writing-area')
+              : document.querySelector('.page-writing-area');
+          }
           const content = area ? area.innerHTML : cur.content;
-          await api.updatePage(cur._apiId, { content, theme: cur.theme, paper: cur.paper });
+          await api.updatePage(cur._apiId, {
+            content,
+            theme: cur.theme,
+            paper: cur.paper,
+            date: cur.date,
+            mood: cur.mood,
+            weather: cur.weather,
+            location: cur.location,
+          });
           cur.content = content;
           showStatus('Saved to cloud', false);
           if (window.MemoriumUtils && Date.now() - lastToast > 4000) {
@@ -304,32 +381,53 @@
         } finally {
           if (loader && window.MemoriumUtils) window.MemoriumUtils.hideLoading(nbEl);
         }
-      }, 5000);
+      }, 800);
     };
-    // Ctrl+S manual save
+    // Ctrl+S manual save — single immediate PUT, avoid double-debounce
     document.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         clearTimeout(saveTimeout);
-        window.savePage();
-        // force immediate save by triggering the timeout handler
-        setTimeout(() => {
-          const cur2 = nb.getState().pages[nb.getState().currentPageIndex];
-          if (!cur2 || !cur2._apiId) return;
-          const area =
-            document.querySelector(`.notebook-page[data-page="${cur2.id}"] .page-writing-area`) ||
-            document.querySelector('.page-writing-area');
-          const content = area ? area.innerHTML : cur2.content;
-          api
-            .updatePage(cur2._apiId, { content, theme: cur2.theme, paper: cur2.paper })
-            .then(() => {
-              showStatus('Saved', false);
-              if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved', 'success');
-            })
-            .catch(err => {
-              if (window.MemoriumUtils) window.MemoriumUtils.showToast(err.message, 'error');
-            });
-        }, 100);
+        // ensure local state is fresh
+        try {
+          originalSavePage();
+        } catch (_) {}
+        const cur2 = nb.getState().pages[nb.getState().currentPageIndex];
+        if (!cur2 || !cur2._apiId) {
+          if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved locally', 'success');
+          return;
+        }
+        let area2 = document.querySelector(
+          `.notebook-page[data-page="${cur2.id}"] .page-writing-area`
+        );
+        if (!area2) {
+          const isLeft = nb.getState().currentPageIndex % 2 === 0;
+          const slotEl = isLeft
+            ? document.querySelector('.notebook-page--left')
+            : document.querySelector('.notebook-page--right');
+          area2 = slotEl
+            ? slotEl.querySelector('.page-writing-area')
+            : document.querySelector('.page-writing-area');
+        }
+        const content = area2 ? area2.innerHTML : cur2.content;
+        api
+          .updatePage(cur2._apiId, {
+            content,
+            theme: cur2.theme,
+            paper: cur2.paper,
+            date: cur2.date,
+            mood: cur2.mood,
+            weather: cur2.weather,
+            location: cur2.location,
+          })
+          .then(() => {
+            cur2.content = content;
+            showStatus('Saved', false);
+            if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved', 'success');
+          })
+          .catch(err => {
+            if (window.MemoriumUtils) window.MemoriumUtils.showToast(err.message, 'error');
+          });
       }
       if (e.key === 'Escape' || e.key === 'Esc') {
         const overlay = document.querySelector('.memorium-preview-overlay');
@@ -380,7 +478,8 @@
       }
     };
 
-    window.createPage = function () {
+    window.createPage = function (opts) {
+      opts = opts || {};
       const state = nb.getState();
       const nextNum = state.nextId || Math.max(...state.pages.map(p => p.pageNumber), 0) + 1;
       // optimistic local, then create on server
@@ -392,30 +491,50 @@
           const resolvePaper = window.MemoriumPaperConfig
             ? window.MemoriumPaperConfig.normalizePaper
             : p => p || 'plain';
-          const curTheme = resolve2(
-            state.pages[state.currentPageIndex]?.theme ||
-              localStorage.getItem('memorium_theme') ||
-              'classic-leather'
-          );
-          const curPaper = resolvePaper(
-            state.pages[state.currentPageIndex]?.paper ||
-              localStorage.getItem('memorium_paper') ||
-              'plain'
-          );
-          const res = await api.createPage(journalId, {
+          const curTheme = opts.theme
+            ? resolve2(opts.theme)
+            : resolve2(
+                state.pages[state.currentPageIndex]?.theme ||
+                  localStorage.getItem('memorium_theme') ||
+                  'classic-leather'
+              );
+          const curPaper = opts.paper
+            ? resolvePaper(opts.paper)
+            : resolvePaper(
+                state.pages[state.currentPageIndex]?.paper ||
+                  localStorage.getItem('memorium_paper') ||
+                  'plain'
+              );
+          // pen handled locally via notebook createPage pen selection
+          if (opts.pen && window.MemoriumPen && window.MemoriumPen.selectPen) {
+            try {
+              window.MemoriumPen.selectPen(opts.pen);
+            } catch (_) {}
+          }
+          const payload = {
             pageNumber: nextNum,
             title: 'Page ' + nextNum,
             content: '<p><span class="page-first-letter">D</span>ear Diary…</p>',
             theme: curTheme,
             paper: curPaper,
-          });
+          };
+          // optional metadata for 11I/11L
+          if (opts.mood != null) payload.mood = opts.mood;
+          if (opts.weather != null) payload.weather = opts.weather;
+          if (opts.date != null) payload.date = opts.date;
+          if (opts.location != null) payload.location = opts.location;
+          const res = await api.createPage(journalId, payload);
           // reload from API to get correct ordering
           await loadFromAPI();
           window.loadPage(state.pages.length - 1);
         } catch (e) {
           showStatus('Create page failed: ' + e.message, true);
-          // fallback to local
-          originalCreatePage();
+          // fallback to local with same opts
+          try {
+            originalCreatePage(opts);
+          } catch (_) {
+            originalCreatePage();
+          }
         }
       })();
       // return placeholder
@@ -466,6 +585,31 @@
       }
     });
 
+    // Metadata changes — page level only (11I)
+    window.addEventListener('memorium:metachange', async e => {
+      const detail = e.detail || {};
+      const { field, value, pageId } = detail;
+      if (!field) return;
+      const state = nb.getState();
+      // Find page by apiId or numeric id
+      const cur =
+        state.pages.find(
+          p => String(p.id) === String(pageId) || String(p._apiId) === String(pageId)
+        ) || state.pages[state.currentPageIndex];
+      if (!cur || !cur._apiId) return;
+      const payload = {};
+      if (field === 'date') payload.date = value;
+      else if (field === 'mood') payload.mood = value;
+      else if (field === 'weather') payload.weather = value;
+      else if (field === 'location') payload.location = value;
+      else return;
+      try {
+        await api.updatePage(cur._apiId, payload);
+      } catch (err) {
+        console.warn('page metadata save failed', err);
+      }
+    });
+
     // Initial load
     await loadFromAPI();
 
@@ -510,5 +654,39 @@
     }
   });
 
-  window.MemoriumJournal = { getJournalId, ensureJournal };
+  // 11N — Fallback page navigation for local mode or when API path didn't trigger
+  // Ensures ?page= or ?pageId= works even when not going through loadFromAPI
+  function tryLocalPageNav() {
+    const req = getRequestedPageParams();
+    if (!req.page && !req.pageId) return;
+    const nb = window.MemoriumNotebook;
+    if (!nb || !nb.getState) return false;
+    try {
+      const state = nb.getState();
+      if (!state || !Array.isArray(state.pages) || !state.pages.length) return false;
+      const idx = findPageIndex(state.pages, req);
+      if (idx >= 0 && idx !== state.currentPageIndex) {
+        if (window.loadPage) window.loadPage(idx);
+        const sec = document.getElementById('notebook-section');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+  // Poll shortly after load for local navigation
+  document.addEventListener('DOMContentLoaded', function () {
+    let attempts = 0;
+    const iv2 = setInterval(function () {
+      attempts++;
+      if (tryLocalPageNav()) clearInterval(iv2);
+      if (attempts > 20) clearInterval(iv2);
+    }, 300);
+  });
+
+  window.MemoriumJournal = {
+    getJournalId,
+    ensureJournal,
+    getRequestedPageParams: getRequestedPageParams,
+  };
 })();

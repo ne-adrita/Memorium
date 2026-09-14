@@ -84,6 +84,10 @@ const journalSchema = new mongoose.Schema(
       default: 'plain',
       trim: true,
     },
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -95,6 +99,7 @@ const journalSchema = new mongoose.Schema(
 // A user can own multiple journals
 journalSchema.index({ owner: 1 });
 journalSchema.index({ owner: 1, updatedAt: -1 });
+journalSchema.index({ owner: 1, isPinned: -1, updatedAt: -1 });
 
 // Virtual for pages in this journal
 journalSchema.virtual('pages', {

@@ -72,6 +72,43 @@ const pageSchema = new mongoose.Schema(
       default: 'plain',
       trim: true,
     },
+    // --- Diary metadata (Step 11I) — all optional, vintage diary feel ---
+    date: {
+      type: Date,
+      default: null,
+    },
+    mood: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: null,
+      validate: {
+        validator(v) {
+          if (v == null || v === '') return true;
+          return ['happy', 'calm', 'sad', 'angry', 'loved', 'tired'].includes(v);
+        },
+        message: '{VALUE} is not a valid mood',
+      },
+    },
+    weather: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: null,
+      validate: {
+        validator(v) {
+          if (v == null || v === '') return true;
+          return ['sunny', 'rainy', 'cloudy', 'night'].includes(v);
+        },
+        message: '{VALUE} is not a valid weather',
+      },
+    },
+    location: {
+      type: String,
+      trim: true,
+      maxlength: [120, 'Location must be at most 120 characters'],
+      default: '',
+    },
   },
   {
     timestamps: true,

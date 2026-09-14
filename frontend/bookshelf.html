@@ -41,6 +41,8 @@
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/animation.css" />
     <link rel="stylesheet" href="css/responsive.css" />
+    <link rel="stylesheet" href="css/bookshelf.css" />
+    <link rel="stylesheet" href="css/search.css" />
 
     <!-- Notebook Component CSS -->
     <link rel="stylesheet" href="components/notebook/notebook.css" />
@@ -250,152 +252,67 @@
       </section>
 
       <!-- ============================================================
-             JOURNAL LIBRARY
+             JOURNAL LIBRARY — Vintage Bookshelf (11M)
              ============================================================ -->
-      <section class="section" style="padding-top: var(--section-gap)">
-        <div class="container">
-          <header class="section-heading">
+      <section class="bookshelf-section" id="bookshelfSection" aria-label="Journal bookshelf">
+        <div class="bookshelf-container">
+          <header class="bookshelf-heading">
             <span class="section-subtitle">My Library</span>
             <h2 class="section-title">Your Journals</h2>
-            <p class="section-description">A collection of memories preserved</p>
+            <p class="section-description">Each spine holds a season of your story — pick one up.</p>
           </header>
 
-          <div class="grid grid--auto">
-            <!-- Journal Card 1 -->
-            <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6)">
-              <div
-                class="card-header"
-                style="
-                  background: var(--paper);
-                  padding: var(--space-5);
-                  border-radius: var(--radius-md);
-                  margin-bottom: var(--space-4);
-                "
-              >
-                <span class="card-meta" style="color: var(--color-primary)">Journal #001</span>
+          <div class="bookshelf-controls" role="toolbar" aria-label="Bookshelf controls">
+            <div class="bookshelf-count" id="bookshelfCount" aria-live="polite">Loading…</div>
+            <div class="memorium-search" id="memoriumSearch" role="search" aria-label="Search diary">
+              <div class="memorium-search-input-wrap">
+                <span class="memorium-search-icon" aria-hidden="true">🔍</span>
+                <input
+                  type="search"
+                  id="memoriumSearchInput"
+                  class="memorium-search-input"
+                  placeholder="Search writings, titles, moods…"
+                  autocomplete="off"
+                  aria-label="Search diary"
+                  aria-controls="memoriumSearchResults"
+                  aria-expanded="false"
+                />
+                <button type="button" class="memorium-search-clear" id="memoriumSearchClear" aria-label="Clear search" hidden>✕</button>
               </div>
-              <div
-                class="card-body"
-                style="
-                  padding: var(--space-4);
-                  background: var(--paper);
-                  border-radius: var(--radius-md);
-                  min-height: 120px;
-                "
-              >
-                <p
-                  class="card-text"
-                  style="
-                    color: var(--color-text-dark);
-                    font-family: var(--font-body);
-                    font-size: var(--fs-md);
-                    line-height: 1.6;
-                  "
-                >
-                  <span class="first-letter">T</span>he beginning of my Memorium journey. First
-                  entries, first memories.
-                </p>
-              </div>
-              <div
-                class="card-footer"
-                style="padding: var(--space-3); border-top: 1px solid var(--border)"
-              >
-                <span class="card-date" style="color: var(--color-text-muted)"
-                  >Started: February 2026</span
-                >
-              </div>
-            </article>
-
-            <!-- Journal Card 2 -->
-            <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6)">
-              <div
-                class="card-header"
-                style="
-                  background: var(--paper);
-                  padding: var(--space-5);
-                  border-radius: var(--radius-md);
-                  margin-bottom: var(--space-4);
-                "
-              >
-                <span class="card-meta" style="color: var(--color-primary)">Journal #002</span>
-              </div>
-              <div
-                class="card-body"
-                style="
-                  padding: var(--space-4);
-                  background: var(--paper);
-                  border-radius: var(--radius-md);
-                  min-height: 120px;
-                "
-              >
-                <p
-                  class="card-text"
-                  style="
-                    color: var(--color-text-dark);
-                    font-family: var(--font-body);
-                    font-size: var(--fs-md);
-                    line-height: 1.6;
-                  "
-                >
-                  Travel memories from my Paris trip. Sunsets, cafes, and stolen moments.
-                </p>
-              </div>
-              <div
-                class="card-footer"
-                style="padding: var(--space-3); border-top: 1px solid var(--border)"
-              >
-                <span class="card-date" style="color: var(--color-text-muted)"
-                  >Added: March 2026</span
-                >
-              </div>
-            </article>
-
-            <!-- Journal Card 3 -->
-            <article class="card" style="aspect-ratio: 3/4; margin-bottom: var(--space-6)">
-              <div
-                class="card-header"
-                style="
-                  background: var(--paper);
-                  padding: var(--space-5);
-                  border-radius: var(--radius-md);
-                  margin-bottom: var(--space-4);
-                "
-              >
-                <span class="card-meta" style="color: var(--color-primary)">Journal #003</span>
-              </div>
-              <div
-                class="card-body"
-                style="
-                  padding: var(--space-4);
-                  background: var(--paper);
-                  border-radius: var(--radius-md);
-                  min-height: 120px;
-                "
-              >
-                <p
-                  class="card-text"
-                  style="
-                    color: var(--color-text-dark);
-                    font-family: var(--font-body);
-                    font-size: var(--fs-md);
-                    line-height: 1.6;
-                  "
-                >
-                  Gratitude journal. Daily moments of thankfulness. The pages that aged with me.
-                </p>
-              </div>
-              <div
-                class="card-footer"
-                style="padding: var(--space-3); border-top: 1px solid var(--border)"
-              >
-                <span class="card-date" style="color: var(--color-text-muted)">Ongoing</span>
-              </div>
-            </article>
+              <div id="memoriumSearchResults" class="memorium-search-results" hidden aria-live="polite"></div>
+              <div class="memorium-search-hint" aria-hidden="true">Find pages by text, title, mood, weather or place</div>
+            </div>
+            <div class="bookshelf-actions">
+              <span class="bookshelf-sort-hint" aria-hidden="true">★ pinned first · most recent next</span>
+              <button type="button" class="btn-shelf" id="bookshelfNewBtn" aria-label="Create new journal">✍️ New Journal</button>
+            </div>
           </div>
 
-          <div class="flex--center section-footer">
-            <a href="journal.html" class="btn btn-outline">+ Start New Journal</a>
+          <div class="bookshelf-wood" role="region" aria-label="Wooden bookshelf">
+            <div class="bookshelf-grid" id="bookshelfGrid" aria-live="polite" aria-busy="true">
+              <!-- Books injected by bookshelf.js as physical vintage diaries -->
+              <div class="bookshelf-loading" role="status">
+                <div class="bookshelf-spinner" aria-hidden="true"></div>
+                <p>Dusting the shelves…</p>
+              </div>
+            </div>
+            <div class="bookshelf-plank" aria-hidden="true"></div>
           </div>
+
+          <!-- Fallback for no-JS: vintage empty shelf illustration -->
+          <noscript>
+            <div class="bookshelf-empty">
+              <div class="bookshelf-empty-illustration" aria-hidden="true">
+                <div class="empty-book" style="background: linear-gradient(135deg, #7a5a42, #5c3d2e)"></div>
+                <div class="empty-book empty-book--tall" style="background: linear-gradient(135deg, #6b2436, #4a1824)"></div>
+                <div class="empty-book empty-book--tilted" style="background: linear-gradient(135deg, #4a6b8a, #1e3a5c)"></div>
+              </div>
+              <div class="bookshelf-empty-text">
+                <h3>Your shelf is waiting</h3>
+                <p>Begin your first vintage diary — it will age beautifully with you.</p>
+              </div>
+            </div>
+          </noscript>
         </div>
       </section>
     </main>
@@ -417,6 +334,7 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/themeConfig.js"></script>
+    <script src="js/search.js"></script>
     <script src="js/bookshelf.js"></script>
     <script src="js/app.js"></script>
 

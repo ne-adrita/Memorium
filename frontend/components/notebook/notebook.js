@@ -13,12 +13,30 @@
   const STORAGE_KEY = 'memorium-state-v2';
   const LEGACY_PREFIX = 'memorium-page-';
 
+  const MOODS = [
+    { id: 'happy', label: 'Happy', icon: '😊' },
+    { id: 'calm', label: 'Calm', icon: '😌' },
+    { id: 'sad', label: 'Sad', icon: '😢' },
+    { id: 'angry', label: 'Angry', icon: '😡' },
+    { id: 'loved', label: 'Loved', icon: '❤️' },
+    { id: 'tired', label: 'Tired', icon: '😴' },
+  ];
+  const WEATHERS = [
+    { id: 'sunny', label: 'Sunny', icon: '☀️' },
+    { id: 'rainy', label: 'Rainy', icon: '🌧' },
+    { id: 'cloudy', label: 'Cloudy', icon: '☁️' },
+    { id: 'night', label: 'Night', icon: '🌙' },
+  ];
   const DEFAULT_PAGES = [
     {
       id: 12,
       title: 'Friday, February 14, 2026',
       theme: 'classic-leather',
       paper: 'plain',
+      date: null,
+      mood: null,
+      weather: null,
+      location: '',
       content: null,
       decorations: [],
     },
@@ -27,6 +45,10 @@
       title: 'Friday, February 14, 2026',
       theme: 'classic-leather',
       paper: 'plain',
+      date: null,
+      mood: null,
+      weather: null,
+      location: '',
       content: null,
       decorations: [],
     },
@@ -66,6 +88,41 @@
     if (!p) return 'plain';
     return allowed.includes(p) ? p : 'plain';
   }
+  function normalizeMood(m) {
+    if (m == null || m === '') return null;
+    const id = String(m).trim().toLowerCase();
+    return MOODS.some(x => x.id === id) ? id : null;
+  }
+  function normalizeWeather(w) {
+    if (w == null || w === '') return null;
+    const id = String(w).trim().toLowerCase();
+    return WEATHERS.some(x => x.id === id) ? id : null;
+  }
+  function normalizeLocation(loc) {
+    if (loc == null) return '';
+    return String(loc)
+      .replace(/<[^>]*>/g, '')
+      .trim()
+      .slice(0, 120);
+  }
+  function normalizeDate(d) {
+    if (d == null || d === '') return null;
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? null : dt.toISOString();
+  }
+  function formatDateForDisplay(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    // Example: 14 September 2026
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  function formatDateForInput(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().slice(0, 10);
+  }
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -75,7 +132,7 @@
           state = parsed;
           // ensure nextId exists
           if (!state.nextId) state.nextId = Math.max(...state.pages.map(p => p.id)) + 1;
-          // migrate old theme/paper ids to new
+          // migrate old theme/paper ids to new + ensure metadata defaults
           let needsSave = false;
           state.pages.forEach(p => {
             const before = p.theme;
@@ -84,6 +141,47 @@
             const beforePaper = p.paper;
             p.paper = normalizePaper(p.paper);
             if (beforePaper !== p.paper) needsSave = true;
+            // metadata — ensure optional fields exist and normalized
+            if (!('date' in p)) {
+              p.date = null;
+              needsSave = true;
+            } else {
+              const nd = normalizeDate(p.date);
+              if (nd !== p.date) {
+                p.date = nd;
+                needsSave = true;
+              }
+            }
+            if (!('mood' in p)) {
+              p.mood = null;
+              needsSave = true;
+            } else {
+              const nm = normalizeMood(p.mood);
+              if (nm !== p.mood) {
+                p.mood = nm;
+                needsSave = true;
+              }
+            }
+            if (!('weather' in p)) {
+              p.weather = null;
+              needsSave = true;
+            } else {
+              const nw = normalizeWeather(p.weather);
+              if (nw !== p.weather) {
+                p.weather = nw;
+                needsSave = true;
+              }
+            }
+            if (!('location' in p)) {
+              p.location = '';
+              needsSave = true;
+            } else {
+              const nl = normalizeLocation(p.location);
+              if (nl !== p.location) {
+                p.location = nl;
+                needsSave = true;
+              }
+            }
           });
           if (needsSave) saveState();
           return;
@@ -112,6 +210,15 @@
         // normalize already
         p.theme = normalizeTheme(p.theme);
         p.paper = normalizePaper(p.paper);
+        // metadata defaults
+        if (!('date' in p) || p.date === undefined) p.date = null;
+        else p.date = normalizeDate(p.date);
+        if (!('mood' in p) || p.mood === undefined) p.mood = null;
+        else p.mood = normalizeMood(p.mood);
+        if (!('weather' in p) || p.weather === undefined) p.weather = null;
+        else p.weather = normalizeWeather(p.weather);
+        if (!('location' in p) || p.location === undefined) p.location = '';
+        else p.location = normalizeLocation(p.location);
       } catch (_) {}
     });
     if (migrated) saveState();
@@ -134,14 +241,27 @@
   function savePage() {
     const page = getCurrentPage();
     if (!page) return;
-    // save both left and right writing areas if present
-    // left page holds main content, right page may also have decoration notes
-    // we persist each page's writingArea separately
-    state.pages.forEach(p => {
-      const area = writingAreas[p.id];
+    // Save only visible spread's writing areas (avoid stale cross-contamination for N>2)
+    // For N>2 we reuse DOM slots, so only the pages currently shown have live DOM
+    const spreadStart = Math.floor(state.currentPageIndex / 2) * 2;
+    const visible = [state.pages[spreadStart], state.pages[spreadStart + 1]].filter(Boolean);
+    visible.forEach(p => {
+      // Prefer slot's current area (handles reuse)
+      const slotEl =
+        p.id === (state.pages[spreadStart] && state.pages[spreadStart].id)
+          ? leftPageEl
+          : rightPageEl;
+      const slotArea = slotEl ? slotEl.querySelector('.page-writing-area') : null;
+      const area = slotArea || writingAreas[p.id];
       if (area) p.content = area.innerHTML;
     });
-    // persist decorations already in state
+    // Also ensure fallback: if no spread (edge case), try all writingAreas
+    if (!visible.length) {
+      state.pages.forEach(p => {
+        const area = writingAreas[p.id];
+        if (area && document.body.contains(area)) p.content = area.innerHTML;
+      });
+    }
     saveState();
   }
 
@@ -170,26 +290,29 @@
     const page = getCurrentPage();
     if (!page || !leftPageEl || !rightPageEl) return;
 
-    // For Step 4: notebook shows spread (both pages) always. We don't hide one side.
-    // Instead we update dataset / content and add turn animation.
-    leftPageEl.style.display = '';
-    rightPageEl.style.display = '';
+    // Open-book spread for N pages: show two facing pages per spread
+    // For N>2 we reuse the two DOM slots and swap content (no new DOM)
+    const spreadStart = Math.floor(state.currentPageIndex / 2) * 2;
+    const leftPage = state.pages[spreadStart] || null;
+    const rightPage = state.pages[spreadStart + 1] || null;
 
-    // Update attributes and theme/paper per page
-    state.pages.forEach(p => {
+    [leftPage, rightPage].forEach((p, idx) => {
+      const el = idx === 0 ? leftPageEl : rightPageEl;
+      if (!p) {
+        el.style.display = 'none';
+        return;
+      }
+      el.style.display = '';
       p.theme = normalizeTheme(p.theme);
       p.paper = normalizePaper(p.paper);
-      const el =
-        p.id === state.pages[0].id ? leftPageEl : p.id === state.pages[1]?.id ? rightPageEl : null;
-      if (!el) return;
       el.dataset.page = String(p.id);
       el.dataset.theme = p.theme || 'classic-leather';
       el.dataset.paper = p.paper || 'plain';
-      // Remove any old theme-* class and add new
-      el.className = el.className.replace(/\btheme-[\w-]+\b/g, '').trim();
+      // Remove any old theme-* class and add new (avoid touching theme-family-system etc)
+      el.className = el.className.replace(/\btheme-[a-z0-9-]+\b/g, '').trim();
       el.classList.add('theme-' + (p.theme || 'classic-leather'));
       // Paper class
-      el.className = el.className.replace(/\bpaper-[\w-]+\b/g, '').trim();
+      el.className = el.className.replace(/\bpaper-[a-z0-9-]+\b/g, '').trim();
       el.classList.add('paper-' + (p.paper || 'plain'));
       // Ensure paper pattern element
       let pat = el.querySelector('.paper-pattern');
@@ -203,15 +326,37 @@
       if (window.MemoriumThemeConfig && window.MemoriumThemeConfig.THEMES[p.theme]) {
         el.dataset.themeFamily = window.MemoriumThemeConfig.THEMES[p.theme].family;
       }
-      const area = writingAreas[p.id];
-      if (area && p.content != null) area.innerHTML = p.content;
+      // Map writing area — reuse slot's area for the page currently shown
+      const slotArea = el.querySelector('.page-writing-area');
+      if (slotArea) {
+        writingAreas[p.id] = slotArea;
+        if (p.content != null) slotArea.innerHTML = p.content;
+      } else {
+        const area = writingAreas[p.id];
+        if (area && p.content != null) area.innerHTML = p.content;
+      }
       const numEl = el.querySelector('.page-number');
-      if (numEl) numEl.textContent = p.id;
+      if (numEl) numEl.textContent = p.pageNumber != null ? p.pageNumber : p.id;
+      ensureMetadataBar(el, p);
     });
 
-    // highlight current page with subtle focus
-    leftPageEl.classList.toggle('page-active', state.currentPageIndex === 0);
-    rightPageEl.classList.toggle('page-active', state.currentPageIndex === 1);
+    // Hide metadata on hidden slot if any
+    if (!rightPage) {
+      const rBar = rightPageEl.querySelector('.page-metadata-bar');
+      if (rBar) rBar.style.display = 'none';
+    } else {
+      const rBar = rightPageEl.querySelector('.page-metadata-bar');
+      if (rBar) rBar.style.display = '';
+    }
+    if (!leftPage) {
+      const lBar = leftPageEl.querySelector('.page-metadata-bar');
+      if (lBar) lBar.style.display = 'none';
+    }
+
+    // highlight current page with subtle focus (within spread)
+    const isLeftActive = state.currentPageIndex % 2 === 0;
+    leftPageEl.classList.toggle('page-active', !!leftPage && isLeftActive);
+    rightPageEl.classList.toggle('page-active', !!rightPage && !isLeftActive);
     if (notebookEl) notebookEl.dataset.current = String(page.id);
 
     renderDecorations();
@@ -222,6 +367,203 @@
       document.querySelectorAll('.theme-dot').forEach(d => {
         d.classList.toggle('active', d.dataset.theme === curTheme);
       });
+    }
+  }
+
+  // ============================================================
+  // METADATA (Step 11I) — date, mood, weather, location per page
+  // Subtle vintage bar, optional, persists via saveState + API
+  // ============================================================
+  function ensureMetadataBar(pageEl, page) {
+    if (!pageEl || !page) return;
+    let bar = pageEl.querySelector('.page-metadata-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'page-metadata-bar';
+      bar.setAttribute('role', 'group');
+      bar.setAttribute('aria-label', 'Page metadata');
+      bar.innerHTML = `
+        <label class="meta-field meta-field--date" title="Date">
+          <span class="meta-icon" aria-hidden="true">📅</span>
+          <input type="date" class="meta-input meta-date-input" aria-label="Date">
+          <span class="meta-date-display" aria-hidden="true"></span>
+        </label>
+        <span class="meta-divider" aria-hidden="true">·</span>
+        <span class="meta-field meta-field--mood" role="group" aria-label="Mood">
+          <span class="meta-icon" aria-hidden="true">😊</span>
+          <span class="meta-mood-options"></span>
+        </span>
+        <span class="meta-divider" aria-hidden="true">·</span>
+        <span class="meta-field meta-field--weather" role="group" aria-label="Weather">
+          <span class="meta-icon" aria-hidden="true">☀️</span>
+          <span class="meta-weather-options"></span>
+        </span>
+        <span class="meta-divider" aria-hidden="true">·</span>
+        <label class="meta-field meta-field--location" title="Location">
+          <span class="meta-icon" aria-hidden="true">📍</span>
+          <input type="text" class="meta-input meta-location-input" placeholder="NSU" maxlength="120" aria-label="Location" autocomplete="off">
+        </label>
+      `;
+      // Insert after page-header or before divider
+      const header = pageEl.querySelector('.page-header');
+      const divider = pageEl.querySelector('.page-divider');
+      if (header && header.parentNode) {
+        // place after header
+        if (divider) header.parentNode.insertBefore(bar, divider);
+        else header.parentNode.insertBefore(bar, header.nextSibling);
+      } else {
+        const content = pageEl.querySelector('.notebook-page-content');
+        if (content) content.insertBefore(bar, content.firstChild);
+        else pageEl.appendChild(bar);
+      }
+      // Build mood options
+      const moodContainer = bar.querySelector('.meta-mood-options');
+      MOODS.forEach(m => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'meta-mood-btn';
+        btn.dataset.mood = m.id;
+        btn.setAttribute('aria-label', m.label);
+        btn.setAttribute('aria-pressed', 'false');
+        btn.title = m.label;
+        btn.textContent = m.icon;
+        btn.addEventListener('click', () => handleMetadataChange(page, 'mood', m.id));
+        moodContainer.appendChild(btn);
+      });
+      // Build weather options
+      const weatherContainer = bar.querySelector('.meta-weather-options');
+      WEATHERS.forEach(w => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'meta-weather-btn';
+        btn.dataset.weather = w.id;
+        btn.setAttribute('aria-label', w.label);
+        btn.setAttribute('aria-pressed', 'false');
+        btn.title = w.label;
+        btn.textContent = w.icon;
+        btn.addEventListener('click', () => handleMetadataChange(page, 'weather', w.id));
+        weatherContainer.appendChild(btn);
+      });
+      // Date input
+      const dateInput = bar.querySelector('.meta-date-input');
+      dateInput.addEventListener('change', e => {
+        const val = e.target.value ? new Date(e.target.value).toISOString() : null;
+        handleMetadataChange(page, 'date', val);
+      });
+      // Location input — debounced
+      const locInput = bar.querySelector('.meta-location-input');
+      let locTimer = null;
+      locInput.addEventListener('input', e => {
+        clearTimeout(locTimer);
+        locTimer = setTimeout(() => handleMetadataChange(page, 'location', e.target.value), 600);
+      });
+      locInput.addEventListener('blur', e => {
+        clearTimeout(locTimer);
+        handleMetadataChange(page, 'location', e.target.value);
+      });
+      // Click on date display focuses input
+      const dateDisplay = bar.querySelector('.meta-date-display');
+      if (dateDisplay && dateInput) {
+        dateDisplay.addEventListener('click', () =>
+          dateInput.showPicker ? dateInput.showPicker() : dateInput.focus()
+        );
+      }
+    }
+    // Update values from page
+    updateMetadataBar(bar, page);
+  }
+
+  function updateMetadataBar(bar, page) {
+    if (!bar || !page) return;
+    // Date
+    const dateInput = bar.querySelector('.meta-date-input');
+    const dateDisplay = bar.querySelector('.meta-date-display');
+    const iso = page.date ? normalizeDate(page.date) : null;
+    const display = iso ? formatDateForDisplay(iso) : '';
+    const inputVal = iso ? formatDateForInput(iso) : '';
+    if (dateInput && dateInput.value !== inputVal) dateInput.value = inputVal;
+    if (dateDisplay) {
+      dateDisplay.textContent = display || '—';
+      dateDisplay.title = display ? 'Date: ' + display + ' (click to edit)' : 'Add date';
+      bar.querySelector('.meta-field--date').classList.toggle('has-value', !!iso);
+    }
+    // Mood
+    const mood = normalizeMood(page.mood);
+    bar.querySelectorAll('.meta-mood-btn').forEach(btn => {
+      const on = btn.dataset.mood === mood;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', String(on));
+    });
+    bar.querySelector('.meta-field--mood').classList.toggle('has-value', !!mood);
+    // Weather
+    const weather = normalizeWeather(page.weather);
+    bar.querySelectorAll('.meta-weather-btn').forEach(btn => {
+      const on = btn.dataset.weather === weather;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', String(on));
+    });
+    bar.querySelector('.meta-field--weather').classList.toggle('has-value', !!weather);
+    // Location
+    const locInput = bar.querySelector('.meta-location-input');
+    const loc = normalizeLocation(page.location);
+    if (locInput && document.activeElement !== locInput) {
+      if (locInput.value !== loc) locInput.value = loc;
+    }
+    bar.querySelector('.meta-field--location').classList.toggle('has-value', !!loc);
+    // Update header indicators if present (page-indicators)
+    const pageEl = bar.closest('.notebook-page');
+    if (pageEl) {
+      const moodIcon = pageEl.querySelector('.page-mood');
+      const weatherIcon = pageEl.querySelector('.page-weather');
+      if (moodIcon) {
+        const m = MOODS.find(x => x.id === mood);
+        moodIcon.textContent = m ? m.icon : '😊';
+        moodIcon.style.opacity = m ? '1' : '0.35';
+        moodIcon.title = m ? m.label : 'Mood';
+      }
+      if (weatherIcon) {
+        const w = WEATHERS.find(x => x.id === weather);
+        weatherIcon.textContent = w ? w.icon : '☀️';
+        weatherIcon.style.opacity = w ? '1' : '0.35';
+        weatherIcon.title = w ? w.label : 'Weather';
+      }
+    }
+  }
+
+  function handleMetadataChange(page, field, value) {
+    if (!page) return;
+    // Toggle off if same mood/weather clicked again (optional)
+    if (field === 'mood' && page.mood === value) value = null;
+    if (field === 'weather' && page.weather === value) value = null;
+    if (field === 'mood') value = normalizeMood(value);
+    if (field === 'weather') value = normalizeWeather(value);
+    if (field === 'location') value = normalizeLocation(value);
+    if (field === 'date') value = normalizeDate(value);
+    // Update page in state (find by id reference)
+    page[field] = value;
+    // Also update state.pages reference (page is already reference, but ensure)
+    saveState();
+    // Update UI
+    const pageEl =
+      document.querySelector(`.notebook-page[data-page="${page.id}"]`) ||
+      (page.id === state.pages[0].id ? leftPageEl : rightPageEl);
+    if (pageEl) {
+      const bar = pageEl.querySelector('.page-metadata-bar');
+      if (bar) updateMetadataBar(bar, page);
+    }
+    // Trigger autosave via existing mechanism (savePage will persist content, but metadata already in state)
+    // Also trigger API persistence via journal.js listener if present
+    document.dispatchEvent(
+      new CustomEvent('memorium:metachange', { detail: { field, value, pageId: page.id } })
+    );
+    // For API mode, also directly try to save page metadata via general save
+    // Use debounced save to avoid spam, but ensure metadata saved quickly
+    if (window.MemoriumNotebook && window.savePage) {
+      // savePage already saves state, but API persistence for metadata handled in journal.js
+      // Call savePage to ensure content+metadata saved locally, then journal.js will handle API
+      try {
+        window.savePage();
+      } catch (_) {}
     }
   }
 
@@ -295,8 +637,11 @@
   // ============================================================
   // PAGE CREATION
   // ============================================================
-  function createPage() {
+  function createPage(opts) {
+    opts = opts || {};
     const newId = state.nextId++;
+    const cur = getCurrentPage();
+    // opts may contain theme/paper/mood/weather/date/location/pen — validate via existing normalizers
     const newPage = {
       id: newId,
       title: new Date().toLocaleDateString('en-US', {
@@ -305,11 +650,21 @@
         month: 'long',
         day: 'numeric',
       }),
-      theme: normalizeTheme(getCurrentPage()?.theme || 'classic-leather'),
-      paper: normalizePaper(getCurrentPage()?.paper || 'plain'),
+      theme: normalizeTheme((opts.theme != null ? opts.theme : cur?.theme) || 'classic-leather'),
+      paper: normalizePaper((opts.paper != null ? opts.paper : cur?.paper) || 'plain'),
+      date: normalizeDate(opts.date !== undefined ? opts.date : null),
+      mood: normalizeMood(opts.mood !== undefined ? opts.mood : null),
+      weather: normalizeWeather(opts.weather !== undefined ? opts.weather : null),
+      location: normalizeLocation(opts.location !== undefined ? opts.location : ''),
       content: `<p class="page-paragraph"><span class="page-first-letter">D</span>ear Diary...</p>`,
       decorations: [],
     };
+    // Pen selection — reuse existing pen system, do not store per-page field unless needed
+    if (opts.pen && window.MemoriumPen && window.MemoriumPen.selectPen) {
+      try {
+        window.MemoriumPen.selectPen(opts.pen);
+      } catch (_) {}
+    }
     state.pages.push(newPage);
     // Extend DOM if needed: for simplicity, if we now have >2 pages, we reuse rightPage for new content via render
     // But to keep spread, we need to allow virtual pages: current model shows only first two DOM nodes.
@@ -392,6 +747,24 @@
     if (type === 'sticker')
       deco.emoji = opts.emoji || STICKER_SET[Math.floor(Math.random() * STICKER_SET.length)];
     if (type === 'paper') deco.text = opts.text || 'Remember this moment';
+    if (type === 'flower') deco.emoji = opts.emoji || '🌸';
+    if (type === 'tape') {
+      deco.text = opts.text || '';
+      deco.config = Object.assign({ color: 'rgba(255,233,120,0.55)' }, opts.config || {});
+    }
+    if (type === 'stamp') {
+      deco.text = opts.text || 'POST';
+      deco.emoji = opts.emoji || '✉️';
+      deco.config = Object.assign({ color: '#E8D9C5' }, opts.config || {});
+    }
+    if (type === 'bookmark') {
+      deco.text = opts.text || 'Bookmark';
+      deco.config = Object.assign({ color: '#C9A227' }, opts.config || {});
+    }
+    if (type === 'clip') {
+      deco.text = opts.text || '';
+      deco.config = Object.assign({ color: '#B0B0B0' }, opts.config || {});
+    }
     page.decorations.push(deco);
     saveState();
     renderDecorations();
@@ -413,20 +786,24 @@
     const page = getCurrentPage();
     if (!page || !leftPageEl || !rightPageEl) return;
     // Clear existing decoration layers and re-render for current page
-    // We render decorations on the right page's decoration layer, and also left if needed
     const layers = document.querySelectorAll('.page-decoration-layer');
     layers.forEach(l => {
       l.innerHTML = '';
       l.style.position = 'absolute';
       l.style.inset = '0';
       l.style.pointerEvents = 'none';
+      l.style.zIndex = '1';
     });
 
-    // target layer is the current page's layer
-    const targetPageEl = state.currentPageIndex === 0 ? leftPageEl : rightPageEl;
+    // target layer is the current page's slot within the spread (avoid hardcoded 0/1)
+    const isLeft = state.currentPageIndex % 2 === 0;
+    const targetPageEl = isLeft ? leftPageEl : rightPageEl;
+    // Ensure target actually corresponds to current page's spread
+    // If N>2 and spread mismatched, fallback to computed
     const layer = targetPageEl.querySelector('.page-decoration-layer');
     if (!layer) return;
-    layer.style.pointerEvents = 'auto';
+    layer.style.pointerEvents = 'none';
+    layer.style.zIndex = '1';
 
     page.decorations.forEach(deco => {
       const el = document.createElement('div');
@@ -519,13 +896,145 @@
         });
         el.appendChild(rm);
       } else if (deco.type === 'flower') {
-        el.textContent = '🌸';
+        el.textContent = deco.emoji || '🌸';
         el.style.fontSize = '26px';
         const rm = document.createElement('button');
         rm.type = 'button';
         rm.textContent = '✕';
         rm.style.cssText =
           'position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:9px;cursor:pointer';
+        rm.addEventListener('click', e => {
+          e.stopPropagation();
+          removeDecoration(deco.id);
+        });
+        el.appendChild(rm);
+      } else if (deco.type === 'tape') {
+        // Washi tape — translucent, vintage
+        el.style.width = '110px';
+        el.style.height = '28px';
+        el.style.background =
+          deco.config && deco.config.color ? deco.config.color : 'rgba(255,233,120,0.55)';
+        el.style.border = '1px dashed rgba(107,79,59,0.22)';
+        el.style.borderRadius = '2px';
+        el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.45)';
+        el.style.opacity = '0.92';
+        // subtle tape texture
+        el.style.backgroundImage =
+          'repeating-linear-gradient(90deg, transparent 0 6px, rgba(0,0,0,0.04) 6px 7px)';
+        if (deco.text) {
+          el.style.fontFamily = "'Caveat', cursive";
+          el.style.fontSize = '12px';
+          el.style.color = '#5A4A3E';
+          el.style.display = 'flex';
+          el.style.alignItems = 'center';
+          el.style.justifyContent = 'center';
+          el.textContent = deco.text;
+        }
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.textContent = '✕';
+        rm.style.cssText =
+          'position:absolute;top:-8px;right:-8px;width:16px;height:16px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:9px;cursor:pointer';
+        rm.addEventListener('click', e => {
+          e.stopPropagation();
+          removeDecoration(deco.id);
+        });
+        el.appendChild(rm);
+      } else if (deco.type === 'stamp') {
+        // Postage stamp — vintage
+        el.style.width = '78px';
+        el.style.height = '92px';
+        el.style.background = (deco.config && deco.config.color) || '#FDF6EE';
+        el.style.border = '2px dashed #C9A227';
+        el.style.borderRadius = '4px';
+        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(255,255,255,0.6)';
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.padding = '6px';
+        el.style.fontFamily = "'Caveat', cursive";
+        // perforated edge effect via inner shadow
+        el.style.backgroundImage = 'radial-gradient(circle, transparent 2px, #FDF6EE 2px)';
+        el.style.backgroundSize = '10px 10px';
+        // content
+        const stampIcon = document.createElement('span');
+        stampIcon.textContent = deco.emoji || '✉️';
+        stampIcon.style.fontSize = '22px';
+        stampIcon.style.filter = 'sepia(0.3)';
+        el.appendChild(stampIcon);
+        const stampText = document.createElement('span');
+        stampText.textContent = deco.text || 'POST';
+        stampText.style.fontSize = '10px';
+        stampText.style.letterSpacing = '0.08em';
+        stampText.style.color = '#8B7355';
+        stampText.style.fontWeight = '600';
+        stampText.style.marginTop = '2px';
+        el.appendChild(stampText);
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.textContent = '✕';
+        rm.style.cssText =
+          'position:absolute;top:-8px;right:-8px;width:16px;height:16px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:9px;cursor:pointer';
+        rm.addEventListener('click', e => {
+          e.stopPropagation();
+          removeDecoration(deco.id);
+        });
+        el.appendChild(rm);
+      } else if (deco.type === 'bookmark') {
+        // Bookmark ribbon — vintage
+        el.style.width = '28px';
+        el.style.height = '74px';
+        el.style.background = (deco.config && deco.config.color) || '#C9A227';
+        el.style.borderRadius = '2px 2px 0 0';
+        el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25)';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.paddingTop = '6px';
+        el.style.clipPath = 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)';
+        if (deco.text) {
+          const bText = document.createElement('span');
+          bText.textContent = deco.text.slice(0, 8);
+          bText.style.writingMode = 'vertical-rl';
+          bText.style.fontFamily = "'Caveat', cursive";
+          bText.style.fontSize = '11px';
+          bText.style.color = '#FFF8E7';
+          bText.style.letterSpacing = '0.04em';
+          bText.style.textShadow = '0 1px 1px rgba(0,0,0,0.18)';
+          el.appendChild(bText);
+        }
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.textContent = '✕';
+        rm.style.cssText =
+          'position:absolute;top:-6px;right:-8px;width:14px;height:14px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:8px;cursor:pointer';
+        rm.addEventListener('click', e => {
+          e.stopPropagation();
+          removeDecoration(deco.id);
+        });
+        el.appendChild(rm);
+      } else if (deco.type === 'clip') {
+        // Paper clip — metallic vintage
+        el.style.width = '22px';
+        el.style.height = '54px';
+        el.style.background = 'transparent';
+        el.style.border = 'none';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.textContent = '📎';
+        el.style.fontSize = '32px';
+        el.style.filter = 'drop-shadow(0 1px 2px rgba(0,0,0,0.12)) sepia(0.15)';
+        el.style.transform += ' rotate(8deg)';
+        if (deco.text) {
+          el.title = deco.text;
+        }
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.textContent = '✕';
+        rm.style.cssText =
+          'position:absolute;top:-6px;right:-6px;width:14px;height:14px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:8px;cursor:pointer';
         rm.addEventListener('click', e => {
           e.stopPropagation();
           removeDecoration(deco.id);
@@ -797,9 +1306,13 @@
 
     const buttons = [
       { label: 'Sticky', type: 'sticky' },
-      { label: 'Sticker', type: 'sticker' },
+      { label: 'Tape', type: 'tape' },
       { label: 'Paper', type: 'paper' },
       { label: 'Flower', type: 'flower' },
+      { label: 'Sticker', type: 'sticker' },
+      { label: 'Stamp', type: 'stamp' },
+      { label: 'Bookmark', type: 'bookmark' },
+      { label: 'Clip', type: 'clip' },
       { label: 'Image', type: 'image' },
       { label: '+ Page', type: 'newpage' },
     ];
@@ -961,7 +1474,7 @@
       btn.style.cssText =
         'padding:.4rem .85rem;border-radius:999px;border:1px solid rgba(107,79,59,.15);background:var(--paper);font-family:var(--heading-font);font-size:.82rem;cursor:pointer;transition:all .15s';
       btn.addEventListener('click', () => {
-        if (b.type === 'newpage') createPage();
+        if (b.type === 'newpage') showPageCreationDialog();
         else if (b.type === 'image') fileInput.click();
         else addDecoration(b.type);
       });
@@ -977,6 +1490,298 @@
     if (anchor && anchor.nextSibling) anchor.parentNode.insertBefore(bar, anchor.nextSibling);
     else notebookEl.parentNode.insertBefore(bar, notebookEl);
     decorationBar = bar;
+  }
+
+  // ============================================================
+  // PAGE CREATION EXPERIENCE (Step 11L) — pre-creation chooser
+  // Vintage modal, reuses theme/paper/pen/mood/weather
+  // ============================================================
+  let _pageCreationDialog = null;
+
+  function hidePageCreationDialog() {
+    if (_pageCreationDialog) {
+      _pageCreationDialog.remove();
+      _pageCreationDialog = null;
+      document.removeEventListener('keydown', _pageCreationEscHandler);
+    }
+  }
+  function _pageCreationEscHandler(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') hidePageCreationDialog();
+  }
+
+  function showPageCreationDialog() {
+    if (_pageCreationDialog) return;
+    const cur = getCurrentPage();
+    const curTheme = cur ? normalizeTheme(cur.theme) : 'classic-leather';
+    const curPaper = cur ? normalizePaper(cur.paper) : 'plain';
+    let curPenId = null;
+    try {
+      curPenId =
+        window.MemoriumPen && window.MemoriumPen.getSelectedPenId
+          ? window.MemoriumPen.getSelectedPenId()
+          : null;
+    } catch (_) {}
+    const curMood = cur ? normalizeMood(cur.mood) : null;
+    const curWeather = cur ? normalizeWeather(cur.weather) : null;
+
+    // Inject dialog styles once (vintage, compact)
+    if (!document.getElementById('memorium-page-create-style')) {
+      const s = document.createElement('style');
+      s.id = 'memorium-page-create-style';
+      s.textContent = `
+        .page-create-overlay{position:fixed;inset:0;background:rgba(43,33,27,0.48);backdrop-filter:blur(4px);z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;animation:pageCreateFade 0.18s ease}
+        @keyframes pageCreateFade{from{opacity:0}to{opacity:1}}
+        .page-create-dialog{width:min(92vw,560px);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#FFFEFB 0%,#FFF8F0 100%),repeating-linear-gradient(0deg,transparent,transparent 26px,rgba(107,79,59,0.02) 26px,rgba(107,79,59,0.02) 27px);border:1px solid var(--theme-border,#DDD1BF);border-radius:16px;box-shadow:0 18px 48px rgba(0,0,0,0.28),0 6px 18px rgba(0,0,0,0.12),inset 0 1px 0 rgba(255,255,255,0.9);position:relative;padding:1rem 1.1rem 1rem}
+        .page-create-dialog::before{content:'';position:absolute;top:0;left:18px;bottom:0;width:1px;background:rgba(201,162,39,0.16);pointer-events:none}
+        .page-create-header{display:flex;align-items:center;gap:0.8rem;padding:0.2rem 0.2rem 0.8rem 1.2rem;border-bottom:1px solid rgba(107,79,59,0.08);margin:-0.2rem -0.2rem 0.9rem -0.2rem}
+        .page-create-icon{width:34px;height:34px;display:grid;place-items:center;background:var(--theme-paper,#F8F1E7);border:1px solid var(--theme-border,#DDD1BF);border-radius:8px;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+        .page-create-title{font-family:var(--heading-font,'Cormorant Garamond',serif);font-size:1.05rem;font-weight:700;color:var(--text-dark,#2F241F);margin:0;line-height:1}
+        .page-create-subtitle{font-family:var(--heading-font,'Cormorant Garamond',serif);font-size:0.74rem;color:var(--text-muted,#9B8E84);letter-spacing:0.06em;text-transform:uppercase;margin:2px 0 0}
+        .page-create-close{margin-left:auto;width:28px;height:28px;border-radius:50%;border:1px solid var(--theme-border,#DDD1BF);background:var(--theme-paper,#F8F1E7);font-size:14px;cursor:pointer}
+        .page-create-body{display:grid;gap:0.9rem;padding-left:1rem}
+        .page-create-section{border:1px solid rgba(107,79,59,0.08);border-radius:10px;background:rgba(248,241,231,0.55);padding:0.6rem 0.7rem}
+        .page-create-section-title{font-family:var(--heading-font,'Cormorant Garamond',serif);font-size:0.74rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted,#6E6259);margin:0 0 0.45rem}
+        .page-create-row{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}
+        .page-create-select{padding:0.4rem 0.6rem;border-radius:999px;border:1px solid var(--theme-border,#DDD1BF);background:#FFFEFB;font-family:var(--heading-font,'Cormorant Garamond',serif);font-size:0.82rem;min-width:140px;max-width:100%}
+        .page-create-mood-btn,.page-create-weather-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid transparent;background:#FFFEFB;cursor:pointer;font-size:14px;display:grid;place-items:center;transition:all 0.16s ease}
+        .page-create-mood-btn:hover,.page-create-weather-btn:hover{transform:scale(1.06);border-color:rgba(107,79,59,0.14);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+        .page-create-mood-btn.active,.page-create-weather-btn.active{background:#FFFEFB;border-color:var(--theme-accent,#C9A227);box-shadow:0 0 0 3px rgba(201,162,39,0.14)}
+        .page-create-actions{display:flex;gap:0.6rem;justify-content:flex-end;padding:0.7rem 0 0.2rem 1rem;border-top:1px solid rgba(107,79,59,0.08);margin-top:0.4rem}
+        .page-create-btn{padding:0.5rem 1.1rem;border-radius:999px;border:1px solid var(--theme-border,#DDD1BF);background:#FFFEFB;font-family:var(--heading-font,'Cormorant Garamond',serif);font-size:0.86rem;font-weight:600;cursor:pointer;transition:all 0.18s ease}
+        .page-create-btn--primary{background:var(--theme-cover,#5C3D2E);color:var(--theme-button-text,#F8F1E7);border-color:var(--theme-cover-edge,#4A2E20)}
+        .page-create-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+        .page-create-btn:focus-visible{outline:2px solid var(--theme-accent,#C9A227);outline-offset:2px}
+        @media(max-width:480px){.page-create-dialog{padding:0.8rem 0.7rem}.page-create-body{padding-left:0}}
+      `;
+      document.head.appendChild(s);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'page-create-overlay';
+    overlay.setAttribute('role', 'presentation');
+    overlay.innerHTML = `
+      <div class="page-create-dialog" role="dialog" aria-modal="true" aria-label="Create new page">
+        <div class="page-create-header">
+          <span class="page-create-icon" aria-hidden="true">📖</span>
+          <div>
+            <h3 class="page-create-title">New Page</h3>
+            <p class="page-create-subtitle">Choose initial setup — all optional</p>
+          </div>
+          <button type="button" class="page-create-close" aria-label="Close" title="Close">✕</button>
+        </div>
+        <div class="page-create-body">
+          <div class="page-create-section">
+            <p class="page-create-section-title">Theme</p>
+            <div class="page-create-row" data-field="theme"></div>
+          </div>
+          <div class="page-create-section">
+            <p class="page-create-section-title">Paper</p>
+            <div class="page-create-row" data-field="paper"></div>
+          </div>
+          <div class="page-create-section">
+            <p class="page-create-section-title">Pen</p>
+            <div class="page-create-row" data-field="pen"></div>
+          </div>
+          <div class="page-create-section">
+            <p class="page-create-section-title">Mood <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#9B8E84">— optional</span></p>
+            <div class="page-create-row" data-field="mood"></div>
+          </div>
+          <div class="page-create-section">
+            <p class="page-create-section-title">Weather <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:#9B8E84">— optional</span></p>
+            <div class="page-create-row" data-field="weather"></div>
+          </div>
+        </div>
+        <div class="page-create-actions">
+          <button type="button" class="page-create-btn" data-action="cancel">Cancel</button>
+          <button type="button" class="page-create-btn page-create-btn--primary" data-action="create">Create Page</button>
+        </div>
+      </div>
+    `;
+    _pageCreationDialog = overlay;
+    document.body.appendChild(overlay);
+    document.addEventListener('keydown', _pageCreationEscHandler);
+
+    // Populate Theme
+    const themeRow = overlay.querySelector('[data-field="theme"]');
+    const themeSelect = document.createElement('select');
+    themeSelect.className = 'page-create-select';
+    themeSelect.setAttribute('aria-label', 'Theme');
+    // Add current theme as first option plus families
+    const curOpt = document.createElement('option');
+    curOpt.value = curTheme;
+    const curThemeData = window.MemoriumThemeConfig
+      ? window.MemoriumThemeConfig.THEMES[curTheme]
+      : null;
+    curOpt.textContent = (curThemeData ? curThemeData.name : curTheme) + ' (current)';
+    themeSelect.appendChild(curOpt);
+    if (window.MemoriumThemeConfig && window.MemoriumThemeConfig.ALL_THEME_IDS) {
+      window.MemoriumThemeConfig.ALL_THEME_IDS.forEach(id => {
+        if (id === curTheme) return;
+        const opt = document.createElement('option');
+        opt.value = id;
+        const td = window.MemoriumThemeConfig.THEMES[id];
+        opt.textContent = td ? td.name : id;
+        themeSelect.appendChild(opt);
+      });
+    }
+    themeRow.appendChild(themeSelect);
+
+    // Paper
+    const paperRow = overlay.querySelector('[data-field="paper"]');
+    const paperSelect = document.createElement('select');
+    paperSelect.className = 'page-create-select';
+    paperSelect.setAttribute('aria-label', 'Paper');
+    const paperCurOpt = document.createElement('option');
+    paperCurOpt.value = curPaper;
+    const curPaperData = window.MemoriumPaperConfig
+      ? window.MemoriumPaperConfig.PAPERS[curPaper]
+      : null;
+    paperCurOpt.textContent = (curPaperData ? curPaperData.label : curPaper) + ' (current)';
+    paperSelect.appendChild(paperCurOpt);
+    if (window.MemoriumPaperConfig) {
+      window.MemoriumPaperConfig.getAllPapers().forEach(p => {
+        if (p.id === curPaper) return;
+        const o = document.createElement('option');
+        o.value = p.id;
+        o.textContent = p.label;
+        paperSelect.appendChild(o);
+      });
+    }
+    paperRow.appendChild(paperSelect);
+
+    // Pen
+    const penRow = overlay.querySelector('[data-field="pen"]');
+    const penSelect = document.createElement('select');
+    penSelect.className = 'page-create-select';
+    penSelect.setAttribute('aria-label', 'Pen');
+    const curPenOpt = document.createElement('option');
+    curPenOpt.value = curPenId || '';
+    try {
+      const penData = window.MemoriumPen ? window.MemoriumPen.getSelectedPen() : null;
+      curPenOpt.textContent = (penData ? penData.name : curPenId || 'Current pen') + ' (current)';
+    } catch (_) {
+      curPenOpt.textContent = (curPenId || 'Current pen') + ' (current)';
+    }
+    penSelect.appendChild(curPenOpt);
+    if (window.MemoriumPenConfig) {
+      window.MemoriumPenConfig.getAllPapers =
+        window.MemoriumPenConfig.getAllPapers || window.MemoriumPenConfig.getAllPens;
+      const allPens = window.MemoriumPenConfig.getAllPens
+        ? window.MemoriumPenConfig.getAllPens()
+        : [];
+      allPens.forEach(p => {
+        if (p.id === curPenId) return;
+        const o = document.createElement('option');
+        o.value = p.id;
+        o.textContent = p.name;
+        penSelect.appendChild(o);
+      });
+    }
+    penRow.appendChild(penSelect);
+
+    // Mood
+    const moodRow = overlay.querySelector('[data-field="mood"]');
+    // Clear button
+    const moodClear = document.createElement('button');
+    moodClear.type = 'button';
+    moodClear.className = 'page-create-mood-btn';
+    moodClear.dataset.mood = '';
+    moodClear.setAttribute('aria-label', 'No mood');
+    moodClear.title = 'No mood';
+    moodClear.textContent = '—';
+    moodClear.style.fontSize = '10px';
+    moodRow.appendChild(moodClear);
+    MOODS.forEach(m => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'page-create-mood-btn';
+      b.dataset.mood = m.id;
+      b.setAttribute('aria-label', m.label);
+      b.title = m.label;
+      b.textContent = m.icon;
+      if (m.id === curMood) b.classList.add('active');
+      moodRow.appendChild(b);
+    });
+    let selectedMood = curMood;
+    moodRow.querySelectorAll('[data-mood]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.mood || null;
+        selectedMood = val || null;
+        // toggle off if same? For creation, empty means no mood
+        moodRow
+          .querySelectorAll('[data-mood]')
+          .forEach(b =>
+            b.classList.toggle('active', b.dataset.mood === selectedMood && !!selectedMood)
+          );
+        // clear button active if no mood
+        moodClear.classList.toggle('active', !selectedMood);
+      });
+    });
+    if (!curMood) moodClear.classList.add('active');
+
+    // Weather
+    const weatherRow = overlay.querySelector('[data-field="weather"]');
+    const weatherClear = document.createElement('button');
+    weatherClear.type = 'button';
+    weatherClear.className = 'page-create-weather-btn';
+    weatherClear.dataset.weather = '';
+    weatherClear.setAttribute('aria-label', 'No weather');
+    weatherClear.title = 'No weather';
+    weatherClear.textContent = '—';
+    weatherClear.style.fontSize = '10px';
+    weatherRow.appendChild(weatherClear);
+    WEATHERS.forEach(w => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'page-create-weather-btn';
+      b.dataset.weather = w.id;
+      b.setAttribute('aria-label', w.label);
+      b.title = w.label;
+      b.textContent = w.icon;
+      if (w.id === curWeather) b.classList.add('active');
+      weatherRow.appendChild(b);
+    });
+    let selectedWeather = curWeather;
+    weatherRow.querySelectorAll('[data-weather]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.weather || null;
+        selectedWeather = val || null;
+        weatherRow
+          .querySelectorAll('[data-weather]')
+          .forEach(b =>
+            b.classList.toggle('active', b.dataset.weather === selectedWeather && !!selectedWeather)
+          );
+        weatherClear.classList.toggle('active', !selectedWeather);
+      });
+    });
+    if (!curWeather) weatherClear.classList.add('active');
+
+    // Close handlers
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) hidePageCreationDialog();
+    });
+    overlay.querySelector('.page-create-close').addEventListener('click', hidePageCreationDialog);
+    overlay
+      .querySelector('[data-action="cancel"]')
+      .addEventListener('click', hidePageCreationDialog);
+    overlay.querySelector('[data-action="create"]').addEventListener('click', () => {
+      const themeVal = themeSelect.value || curTheme;
+      const paperVal = paperSelect.value || curPaper;
+      const penVal = penSelect.value || curPenId;
+      // pen selection via existing system
+      hidePageCreationDialog();
+      createPage({
+        theme: themeVal,
+        paper: paperVal,
+        pen: penVal,
+        mood: selectedMood,
+        weather: selectedWeather,
+        date: null,
+        location: '',
+      });
+    });
+    // Focus first select
+    setTimeout(() => themeSelect.focus(), 0);
   }
 
   function renderPageElements() {
@@ -1098,15 +1903,12 @@
         }
       }
       const t = document.activeElement;
-      if (
-        t &&
-        (t.tagName === 'TEXTAREA' ||
-          t.tagName === 'INPUT' ||
-          t.tagName === 'SELECT' ||
-          t.isContentEditable)
-      ) {
-        // allow arrow navigation when not editing? but skip if contenteditable focused to allow cursor movement
+      // Do not hijack arrow keys when typing in inputs, search, or editing
+      if (t) {
+        if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT') return;
         if (t.isContentEditable) return;
+        if (t.closest && t.closest('.memorium-search')) return;
+        if (t.closest && t.closest('.page-writing-area')) return;
       }
       if (e.key === 'ArrowLeft') {
         e.preventDefault();

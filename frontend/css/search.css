@@ -1,0 +1,389 @@
+/* ============================================================
+   MEMORIUM — Search / Find in Diary (Step 11N)
+   Vintage paper card, no frameworks, mobile-friendly
+   ============================================================ */
+
+.memorium-search {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto 1rem;
+  z-index: 5;
+}
+
+/* On bookshelf: sit inside controls or heading */
+.bookshelf-controls .memorium-search,
+.bookshelf-section .memorium-search {
+  max-width: 560px;
+  margin: 0;
+  flex: 1 1 320px;
+}
+.bookshelf-controls .memorium-search {
+  min-width: 220px;
+}
+
+/* Journal page search sits above notebook */
+#notebook-section .memorium-search {
+  max-width: 560px;
+  margin: 0 auto 1.1rem;
+}
+
+.memorium-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(180deg, #FFFEFB 0%, #FFF8F0 100%);
+  border: 1.5px solid rgba(107, 79, 59, 0.14);
+  border-radius: 999px;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  padding: 0.38rem 0.5rem 0.38rem 0.9rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.memorium-search-input-wrap:focus-within {
+  border-color: rgba(201, 162, 39, 0.38);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.08),
+    0 0 0 3px rgba(201, 162, 39, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.memorium-search-icon {
+  font-size: 14px;
+  opacity: 0.55;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.memorium-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.92rem;
+  color: var(--text-dark, #2F241F);
+  min-width: 0;
+  padding: 0.2rem 0;
+}
+
+.memorium-search-input::placeholder {
+  color: #9B8E84;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.memorium-search-clear {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(107, 79, 59, 0.12);
+  background: rgba(248, 241, 231, 0.9);
+  color: #6E6259;
+  font-size: 12px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-left: 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.memorium-search-clear:hover {
+  background: rgba(201, 162, 39, 0.14);
+  border-color: rgba(201, 162, 39, 0.22);
+  color: #2F241F;
+}
+
+.memorium-search-hint {
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(107, 79, 59, 0.5);
+  margin-top: 0.35rem;
+  text-align: center;
+}
+
+/* Results panel — vintage paper */
+.memorium-search-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  background:
+    linear-gradient(180deg, #FFFEFB 0%, #FFF8F0 100%),
+    repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(107,79,59,0.02) 26px, rgba(107,79,59,0.02) 27px);
+  border: 1px solid rgba(107, 79, 59, 0.12);
+  border-radius: 14px;
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.14),
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  max-height: min(62vh, 420px);
+  overflow: auto;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  z-index: 40;
+}
+
+/* Left red margin line like notebook */
+.memorium-search-results::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(201, 162, 39, 0.14);
+  pointer-events: none;
+}
+
+.memorium-search-results[hidden] {
+  display: none !important;
+}
+
+.memorium-search-results::-webkit-scrollbar {
+  width: 6px;
+}
+.memorium-search-results::-webkit-scrollbar-thumb {
+  background: rgba(107, 79, 59, 0.18);
+  border-radius: 3px;
+}
+
+/* Empty / no-results / loading states */
+.memorium-search-state {
+  padding: 1rem 1.1rem 1rem 1.6rem;
+  text-align: center;
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  color: #6E6259;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.memorium-search-state--empty {
+  color: #9B8E84;
+  font-style: italic;
+}
+.memorium-search-state--no-results {
+  color: #6E6259;
+}
+.memorium-search-state strong {
+  color: #2F241F;
+  font-weight: 600;
+}
+.memorium-search-state em {
+  font-family: var(--body-font, 'Lora', serif);
+  font-style: italic;
+  color: #8B7355;
+}
+
+/* Result card */
+.memorium-search-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.65rem 0.7rem 0.65rem 1.4rem;
+  border: 1px solid rgba(107, 79, 59, 0.08);
+  border-radius: 10px;
+  background: rgba(248, 241, 231, 0.55);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  position: relative;
+}
+
+.memorium-search-item:hover,
+.memorium-search-item:focus-visible {
+  background: #FFFEFB;
+  border-color: rgba(201, 162, 39, 0.22);
+  transform: translateY(-1px);
+  outline: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.memorium-search-item:focus-visible {
+  outline: 2px solid rgba(201, 162, 39, 0.45);
+  outline-offset: 2px;
+}
+
+.memorium-search-item:active {
+  transform: translateY(0);
+}
+
+.memorium-search-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+}
+
+.memorium-search-journal {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2F241F;
+  line-height: 1.2;
+  max-width: 16ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memorium-search-dot {
+  opacity: 0.35;
+  font-size: 0.7rem;
+}
+
+.memorium-search-page {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6E6259;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(107, 79, 59, 0.1);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+.memorium-search-snippet {
+  font-family: var(--body-font, 'Lora', serif);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #3C312B;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.memorium-search-snippet--empty {
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-style: italic;
+  color: #9B8E84;
+  font-size: 0.78rem;
+}
+
+.memorium-search-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+  margin-top: 0.15rem;
+}
+
+.memorium-search-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  background: #FFFEFB;
+  border: 1px solid rgba(107, 79, 59, 0.09);
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  color: #6E6259;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.memorium-search-badge--matched {
+  background: rgba(201, 162, 39, 0.14);
+  border-color: rgba(201, 162, 39, 0.22);
+  color: #5A4A3E;
+  font-weight: 600;
+}
+
+.memorium-search-match-label {
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(107, 79, 59, 0.45);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.memorium-search-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.2rem 0.15rem 1.4rem;
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.72rem;
+  color: rgba(107, 79, 59, 0.5);
+  letter-spacing: 0.04em;
+  border-top: 1px dashed rgba(107, 79, 59, 0.08);
+  margin-top: 0.15rem;
+}
+
+.memorium-search-footer strong {
+  color: #6E6259;
+  font-weight: 600;
+}
+
+/* Highlight within snippet — subtle */
+.memorium-search-hl {
+  background: rgba(255, 233, 120, 0.42);
+  padding: 0 2px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .memorium-search {
+    max-width: 100%;
+  }
+  .bookshelf-controls .memorium-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .memorium-search-results {
+    max-height: 58vh;
+    padding: 0.45rem;
+  }
+  .memorium-search-journal {
+    max-width: 14ch;
+  }
+}
+
+@media (max-width: 480px) {
+  .memorium-search-input {
+    font-size: 0.88rem;
+  }
+  .memorium-search-item {
+    padding: 0.55rem 0.6rem 0.55rem 1.2rem;
+  }
+  .memorium-search-snippet {
+    font-size: 0.78rem;
+  }
+}
+
+/* Prevent clipped dropdown — parents were overflow hidden/auto (integration fix 11O) */
+.bookshelf-section,
+#notebook-section {
+  overflow: visible;
+}
+#notebook-section {
+  overflow-x: visible;
+}
+/* Keep notebook horizontal scroll via inner wrapper, not section */
+#notebook-section > div[style*="display: flex"] {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .memorium-search-item,
+  .memorium-search-input-wrap {
+    transition: none;
+  }
+}
