@@ -287,6 +287,238 @@
   position: relative;
 }
 
+/* ============================================================
+   11W — FULL-SCREEN DIARY / MAXIMUM WRITING AREA
+   - Hero minimized to near-zero to give diary full viewport
+   - Diary ~94vw x ~78vh, preserves physical proportions
+   - Writing area enlarged, navigation below diary centered
+   ============================================================ */
+
+/* --- Hero: collapse entirely — diary is the hero on journal page --- */
+#journal-hero {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+/* If hero is ever not hidden (e.g. JS), keep it ultra-compact as fallback */
+#journal-hero .hero-visual { display: none !important; }
+#journal-hero .hero-badge,
+#journal-hero .hero-description,
+#journal-hero .hero-description::before { display: none !important; }
+
+/* --- Minimal header footprint: navbar already hidden, trigger at top --- */
+.memorium-tools-trigger {
+  top: 12px !important;
+  right: 14px !important;
+}
+
+/* --- Heading above diary: compact, diary-first --- */
+#notebook-section .section-heading {
+  margin: 0 auto 0.35rem !important;
+  padding: 0 0.6rem !important;
+  max-width: 720px !important;
+  text-align: center !important;
+}
+#notebook-section .section-subtitle {
+  font-size: 0.62rem !important;
+  letter-spacing: 0.1em !important;
+  margin-bottom: 0.12rem !important;
+  opacity: 0.9 !important;
+}
+#notebook-section .section-title {
+  font-size: clamp(1.05rem, 1.45vw, 1.3rem) !important;
+  margin-bottom: 0.15rem !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.01em !important;
+}
+#notebook-section .section-description {
+  font-size: 0.68rem !important;
+  line-height: 1.35 !important;
+  max-width: 520px !important;
+  margin: 0 auto !important;
+  opacity: 0.8 !important;
+}
+@media (max-height: 800px) {
+  #notebook-section .section-description { display: none !important; }
+  #notebook-section .section-heading { margin-bottom: 0.2rem !important; }
+}
+@media (max-height: 700px) {
+  #notebook-section .section-heading { display: none !important; }
+}
+
+/* --- Search: compact, no hint, sits tight above diary --- */
+.memorium-search-row {
+  max-width: 820px !important;
+  width: min(92vw, 820px) !important;
+  margin: 0.3rem auto 0.45rem !important;
+  gap: 0.45rem !important;
+  align-items: center !important;
+}
+#notebook-section .memorium-search {
+  margin-bottom: 0 !important;
+  flex: 1 1 420px !important;
+}
+#notebook-section .memorium-search-input-wrap {
+  padding: 0.32rem 0.45rem 0.32rem 0.85rem !important;
+}
+#notebook-section .memorium-search-input { font-size: 0.88rem !important; }
+#notebook-section .memorium-search-hint { display: none !important; }
+.memorium-search-results { z-index: 900 !important; }
+
+/* --- View toggle beside search: keep compact --- */
+.memorium-search-row .view-toggle {
+  padding: 0.28rem !important;
+  gap: 0.28rem !important;
+}
+.memorium-search-row .view-btn {
+  padding: 0.36rem 0.65rem !important;
+  font-size: 0.78rem !important;
+}
+
+/* --- DIARY DIMENSIONS: 80–95% viewport, tall, preserve physical look --- */
+#notebook-section .notebook {
+  width: min(94vw, 1580px) !important;
+  max-width: 94vw !important;
+  /* Tall: fill most vertical space after minimal chrome; capped for huge screens */
+  height: clamp(560px, 76vh, 740px) !important;
+  min-height: clamp(560px, 76vh, 740px) !important;
+  max-height: clamp(560px, 78vh, 760px) !important;
+  /* Keep physical feel — do not distort via flex stretch */
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+/* Single-page view: roughly half width but still large writing area */
+#notebook-section .notebook.view-single {
+  width: min(52vw, 820px) !important;
+  max-width: 52vw !important;
+}
+@media (min-width: 1536px) {
+  #notebook-section .notebook { width: min(92vw, 1680px) !important; height: clamp(620px, 74vh, 820px) !important; min-height: clamp(620px, 74vh, 820px) !important; max-height: 820px !important; }
+  #notebook-section .notebook.view-single { width: min(48vw, 880px) !important; }
+}
+@media (max-width: 1200px) {
+  #notebook-section .notebook { width: min(94vw, 1240px) !important; height: clamp(540px, 74vh, 700px) !important; min-height: clamp(540px, 74vh, 700px) !important; }
+}
+@media (max-width: 1024px) {
+  #notebook-section .notebook { width: min(96vw, 1100px) !important; height: clamp(520px, 72vh, 660px) !important; min-height: clamp(520px, 72vh, 660px) !important; }
+  #notebook-section .notebook.view-single { width: min(72vw, 680px) !important; max-width: 72vw !important; }
+}
+
+/* --- Pages: taller to use diary height; writing area dominates --- */
+#notebook-section .notebook-page {
+  min-height: 420px !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+#notebook-section .notebook-page-content {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+#notebook-section .page-body {
+  flex: 1 !important;
+  min-height: 300px !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+#notebook-section .page-writing-area {
+  flex: 1 !important;
+  min-height: 320px !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  font-size: 1.03rem !important;
+  line-height: 1.68 !important;
+  padding-right: 4px !important;
+  scrollbar-width: thin !important;
+}
+#notebook-section .page-writing-area::-webkit-scrollbar { width: 5px; }
+#notebook-section .page-writing-area::-webkit-scrollbar-thumb { background: rgba(107,79,59,0.16); border-radius: 999px; }
+
+/* Page metadata bar stays compact inside taller page */
+#notebook-section .page-metadata-bar { margin-bottom: 0.4rem !important; }
+
+/* --- Navigation: dedicated row BELOW diary, centered vintage pill --- */
+.notebook-nav-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0.85rem auto 0 !important;
+  padding: 0.38rem 0.85rem !important;
+  gap: 0.85rem !important;
+  background: rgba(248,241,231,0.96) !important;
+  border: 1.5px solid rgba(107,79,59,0.12) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  width: max-content !important;
+  max-width: 92vw !important;
+  flex-wrap: nowrap !important;
+  order: 10 !important;
+}
+.notebook-nav {
+  padding: 0.42rem 0.95rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.01em !important;
+  flex-shrink: 0 !important;
+}
+.notebook-nav:hover { transform: translateY(-1px); }
+#page-indicator {
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  min-width: 96px !important;
+  text-align: center !important;
+  color: var(--text-dark, #2F241F) !important;
+  white-space: nowrap !important;
+}
+
+/* --- Mobile: no horizontal overflow, navigation still below --- */
+@media (max-width: 768px) {
+  #notebook-section { padding: 0.5rem 0.35rem 0.9rem !important; }
+  #notebook-section .section-heading { margin-bottom: 0.3rem !important; }
+  #notebook-section .memorium-search-row { width: 95vw !important; max-width: 95vw !important; flex-wrap: wrap !important; }
+  #notebook-section .notebook,
+  #notebook-section .notebook.view-single {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    min-width: 95vw !important;
+    height: auto !important;
+    min-height: 520px !important;
+    max-height: none !important;
+  }
+  #notebook-section .notebook-page { min-height: 460px !important; }
+  #notebook-section .page-body { min-height: 280px !important; }
+  #notebook-section .page-writing-area { min-height: 260px !important; max-height: 62vh !important; }
+  .notebook-nav-container {
+    margin: 0.7rem auto 0 !important;
+    padding: 0.32rem 0.6rem !important;
+    gap: 0.55rem !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+  .notebook-nav { padding: 0.38rem 0.75rem !important; font-size: 0.78rem !important; }
+  #page-indicator { font-size: 0.78rem !important; min-width: 82px !important; }
+  /* keep trigger bottom-sheet position on mobile */
+  .memorium-tools-trigger { top: auto !important; bottom: 18px !important; right: 14px !important; }
+}
+@media (max-width: 480px) {
+  #notebook-section .notebook,
+  #notebook-section .notebook.view-single { width: 96vw !important; max-width: 96vw !important; min-height: 480px !important; }
+  .notebook-nav-container { max-width: 96vw !important; }
+}
+
 /* 11V FULL VIEWPORT — edge-to-edge desk, diary centered */
 html, body {
   margin: 0 !important;
@@ -312,16 +544,20 @@ main {
 }
 #notebook-section {
   width: 100% !important;
-  min-height: 100vh !important;
-  min-height: 100dvh !important;
+  min-height: calc(100vh - 0px) !important;
+  min-height: calc(100dvh - 0px) !important;
   margin: 0 !important;
   max-width: none !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   background: #3d2e26 !important;
-  padding: 1.2rem 0.5rem 1.8rem !important;
+  padding: 0.6rem 0.5rem 0.9rem !important;
   overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  box-sizing: border-box !important;
 }
 #notebook-section .section-heading {
   max-width: 700px;
@@ -335,6 +571,9 @@ main {
   padding: 0 0.5rem !important;
   box-sizing: border-box !important;
   justify-content: center !important;
+  align-items: center !important;
+  flex-direction: column !important;
+  gap: 0.6rem !important;
   overflow-x: visible !important;
 }
 /* Keep diary physical — do not stretch notebook itself */
@@ -445,4 +684,9 @@ body.memorium-drawer-ready .writing-tools-bar {
 }
 @media (max-width: 480px) {
   .memorium-tools-drawer { height: 78vh; }
+}
+
+/* 11W FINAL OVERRIDES — ensure mobile padding not clobbered by 11V order */
+@media (max-width: 768px) {
+  #notebook-section { padding: 0.5rem 0.35rem 0.9rem !important; }
 }
