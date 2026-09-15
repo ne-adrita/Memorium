@@ -87,6 +87,8 @@
       notebookEl.classList.toggle('view-single', isSingleView());
       notebookEl.classList.toggle('view-spread', !isSingleView());
       notebookEl.dataset.view = viewMode;
+      // Re-apply zoom after view switch (scale preserved, but layout may need recalc)
+      setTimeout(() => applyZoom(zoomLevel), 0);
     }
     updateViewToggleUI();
     renderCurrentPage();
@@ -105,6 +107,341 @@
         : 'none';
       btn.style.color = on ? '#2F241F' : '#6E6259';
     });
+  }
+
+  // ============================================================
+  // 11X — INDEPENDENT PAGE ZOOM (50-200%, persists, diary-only)
+  // ============================================================
+  const ZOOM_STORAGE_KEY = 'memorium_page_zoom';
+  const ZOOM_MIN = 50;
+  const ZOOM_MAX = 200;
+  const ZOOM_STEP = 10;
+  let zoomLevel = (function () {
+    try {
+      const raw = localStorage.getItem(ZOOM_STORAGE_KEY);
+      const n = parseInt(raw, 10);
+      if (!isNaN(n) && n >= ZOOM_MIN && n <= ZOOM_MAX) return n;
+    } catch (_) {}
+    return 100;
+  })();
+  function clampZoom(n) {
+    const v = Math.round(Number(n));
+    if (isNaN(v)) return 100;
+    return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, v));
+  }
+  function getZoom() {
+    return zoomLevel;
+  }
+  function setZoom(next) {
+    const clamped = clampZoom(next);
+    if (clamped === zoomLevel) {
+      // still apply to ensure UI in sync (e.g. after view change)
+      applyZoom(clamped);
+      return clamped;
+    }
+    zoomLevel = clamped;
+    try {
+      localStorage.setItem(ZOOM_STORAGE_KEY, String(zoomLevel));
+    } catch (_) {}
+    applyZoom(zoomLevel);
+    updateZoomUI();
+    document.dispatchEvent(new CustomEvent('memorium:zoomchange', { detail: { zoom: zoomLevel } }));
+    return zoomLevel;
+  }
+  function applyZoom(level) {
+    if (!notebookEl) return;
+    const scale = clampZoom(level) / 100;
+    // Only diary (notebook) scales — not nav, not header, not drawer
+    notebookEl.style.transform = 'scale(' + scale + ')';
+    notebookEl.style.transformOrigin = 'center top';
+    // Ensure viewport handles overflow at high zoom
+    const viewport = notebookEl.parentElement;
+    if (viewport && viewport.classList.contains('memorium-zoom-viewport')) {
+      // No extra JS height needed — CSS overflow:auto on viewport shows scroll for scaled visual overflow
+      viewport.dataset.zoom = String(level);
+    }
+    updateZoomUI();
+  }
+  function updateZoomUI() {
+    const valEl = document.querySelector('.memorium-zoom-value');
+    if (valEl) valEl.textContent = zoomLevel + '%';
+    const outBtn = document.querySelector('.memorium-zoom-btn[data-action="out"]');
+    const inBtn = document.querySelector('.memorium-zoom-btn[data-action="in"]');
+    if (outBtn) outBtn.disabled = zoomLevel <= ZOOM_MIN;
+    if (inBtn) inBtn.disabled = zoomLevel >= ZOOM_MAX;
+    const sel = document.querySelector('.memorium-zoom-select');
+    if (sel && sel.value !== String(zoomLevel)) sel.value = String(zoomLevel);
+  }
+  function ensureZoomViewport() {
+    if (!notebookEl || !notebookEl.parentElement) return null;
+    // If notebook already inside a dedicated viewport, reuse it and clean erroneous styles
+    if (notebookEl.parentElement.classList.contains('memorium-zoom-viewport')) {
+      const vp = notebookEl.parentElement;
+      // Remove erroneous 11Y partial that forced overflow visible and hid scroll at high zoom
+      if (vp.style.overflow === 'visible') vp.style.overflow = '';
+      if (vp.style.minHeight === '400px') vp.style.minHeight = '';
+      vp.dataset.zoom = String(zoomLevel);
+      return vp;
+    }
+    const parent = notebookEl.parentElement;
+    // Check for existing viewport sibling
+    let viewport = null;
+    try {
+      viewport = parent.querySelector(':scope > .memorium-zoom-viewport');
+    } catch (_) {
+      viewport = parent.querySelector('.memorium-zoom-viewport');
+    }
+    if (viewport && viewport.contains(notebookEl)) return viewport;
+    // If parent already has navRow inside, we must not repurpose parent as viewport
+    // (that would scroll controls away at high zoom). Create dedicated wrapper for notebook only.
+    const hasNavRow = !!(parent.querySelector && parent.querySelector('.memorium-nav-row'));
+    viewport = document.createElement('div');
+    viewport.className = 'memorium-zoom-viewport';
+    viewport.dataset.zoom = String(zoomLevel);
+    // Move notebook into viewport; keep viewport as sibling to future navRow
+    parent.insertBefore(viewport, notebookEl);
+    viewport.appendChild(notebookEl);
+    // If we detected a viewport that was parent itself previously, migrate any navRow out
+    if (hasNavRow) {
+      // navRow already outside newly created viewport, no action
+    }
+    return viewport;
+  }
+  function createZoomControl() {
+    if (document.querySelector('.memorium-zoom-control'))
+      return document.querySelector('.memorium-zoom-control');
+    const wrap = document.createElement('div');
+    wrap.className = 'memorium-zoom-control';
+    wrap.setAttribute('role', 'group');
+    wrap.setAttribute('aria-label', 'Page zoom');
+    wrap.innerHTML =
+      '<button type="button" class="memorium-zoom-btn" data-action="out" aria-label="Zoom out">−</button>' +
+      '<span class="memorium-zoom-value" aria-live="polite" aria-atomic="true">100%</span>' +
+      '<button type="button" class="memorium-zoom-btn" data-action="in" aria-label="Zoom in">+</button>';
+    const outBtn = wrap.querySelector('[data-action="out"]');
+    const inBtn = wrap.querySelector('[data-action="in"]');
+    outBtn.addEventListener('click', () => setZoom(zoomLevel - ZOOM_STEP));
+    inBtn.addEventListener('click', () => setZoom(zoomLevel + ZOOM_STEP));
+    // Keyboard: when focused on value, allow +/- keys
+    wrap.addEventListener('keydown', e => {
+      if (e.key === '+' || e.key === '=' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setZoom(zoomLevel + ZOOM_STEP);
+      }
+      if (e.key === '-' || e.key === '_' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setZoom(zoomLevel - ZOOM_STEP);
+      }
+      if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setZoom(100);
+      }
+    });
+    // Make wrap focusable for keyboard
+    wrap.tabIndex = 0;
+    return wrap;
+  }
+
+  // ============================================================
+  // 11Y — SAVE/EDIT per-page state (clean, page-ID keyed, single impl)
+  // ============================================================
+  const saveEditStateById = {}; // pageId string -> 'saved'|'editing'|'unsaved'
+  const lastSavedContentById = {}; // pageId string -> html string
+  function getPageSaveId(page) {
+    if (!page) return null;
+    const raw = page._apiId || page._id || page.id;
+    return raw != null ? String(raw) : null;
+  }
+  function getCurrentWritingArea() {
+    const page = getCurrentPage();
+    if (!page) return null;
+    const isLeft = state.currentPageIndex % 2 === 0;
+    const slotEl = isLeft ? leftPageEl : rightPageEl;
+    if (slotEl) {
+      const a = slotEl.querySelector('.page-writing-area');
+      if (a) return a;
+    }
+    const pid = getPageSaveId(page);
+    if (pid && writingAreas[page.id]) return writingAreas[page.id];
+    return document.querySelector('.page-writing-area');
+  }
+  function getPageDirtyState(pageId) {
+    return saveEditStateById[pageId] || 'editing';
+  }
+  function setPageDirtyState(pageId, s) {
+    if (pageId) saveEditStateById[pageId] = s;
+  }
+  function syncDirtyFromContent(pageId, currentHtml) {
+    const last = lastSavedContentById[pageId];
+    if (last === undefined) return;
+    if (currentHtml !== last) {
+      if (saveEditStateById[pageId] === 'saved') setPageDirtyState(pageId, 'unsaved');
+    } else {
+      // Content reverted to last saved -> back to saved if was unsaved
+      if (saveEditStateById[pageId] === 'unsaved') setPageDirtyState(pageId, 'saved');
+    }
+  }
+  function saveCurrentPageImmediate() {
+    const page = getCurrentPage();
+    if (!page) return Promise.resolve(false);
+    const area = getCurrentWritingArea();
+    if (!area) return Promise.resolve(false);
+    const content = area.innerHTML;
+    const pid = getPageSaveId(page);
+    page.content = content;
+    try {
+      saveState();
+    } catch (_) {}
+    if (pid) {
+      setPageDirtyState(pid, 'saved');
+      lastSavedContentById[pid] = content;
+    }
+    updateSaveEditUI();
+    if (
+      window.MemoriumAPI &&
+      window.MemoriumAPI.isAuthed &&
+      window.MemoriumAPI.isAuthed() &&
+      page._apiId
+    ) {
+      return window.MemoriumAPI.updatePage(page._apiId, {
+        content,
+        theme: page.theme,
+        paper: page.paper,
+        date: page.date,
+        mood: page.mood,
+        weather: page.weather,
+        location: page.location,
+      })
+        .then(() => {
+          if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved ✓', 'success');
+          return true;
+        })
+        .catch(err => {
+          if (window.MemoriumUtils)
+            window.MemoriumUtils.showToast('Save failed: ' + (err.message || 'error'), 'error');
+          return false;
+        });
+    }
+    if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved ✓', 'success');
+    return Promise.resolve(true);
+  }
+  function enterEditMode() {
+    const page = getCurrentPage();
+    if (!page) return;
+    const pid = getPageSaveId(page);
+    const area = getCurrentWritingArea();
+    if (!area) return;
+    if (pid) setPageDirtyState(pid, 'editing');
+    area.contentEditable = 'true';
+    try {
+      area.focus();
+    } catch (_) {}
+    if (window.MemoriumWriting && window.MemoriumWriting.attachToArea) {
+      try {
+        window.MemoriumWriting.attachToArea(area);
+      } catch (_) {}
+    }
+    updateSaveEditUI();
+  }
+  function updateSaveEditUI() {
+    const saveEditBar = document.querySelector('.memorium-save-edit-bar');
+    if (!saveEditBar) return;
+    const saveBtn = saveEditBar.querySelector('.memorium-save-btn');
+    const statusEl = saveEditBar.querySelector('.memorium-save-status');
+    if (!saveBtn || !statusEl) return;
+    const page = getCurrentPage();
+    const pid = page ? getPageSaveId(page) : null;
+    const curState = pid ? getPageDirtyState(pid) : 'editing';
+    const area = getCurrentWritingArea();
+    if (curState === 'saved') {
+      saveBtn.textContent = 'Edit';
+      saveBtn.setAttribute('aria-label', 'Edit page');
+      statusEl.textContent = 'Saved ✓';
+      saveBtn.disabled = false;
+      if (area) area.contentEditable = 'false';
+    } else if (curState === 'unsaved') {
+      saveBtn.textContent = 'Save';
+      saveBtn.setAttribute('aria-label', 'Save page');
+      statusEl.textContent = 'Unsaved changes';
+      saveBtn.disabled = false;
+      if (area) area.contentEditable = 'true';
+    } else {
+      saveBtn.textContent = 'Save';
+      saveBtn.setAttribute('aria-label', 'Save page');
+      statusEl.textContent = 'Editing';
+      saveBtn.disabled = false;
+      if (area) area.contentEditable = 'true';
+    }
+  }
+  function addSaveEditButtons() {
+    if (document.querySelector('.memorium-save-edit-bar')) return;
+    const bar = document.createElement('div');
+    bar.className = 'memorium-save-edit-bar';
+    bar.setAttribute('role', 'group');
+    bar.setAttribute('aria-label', 'Save/edit page content');
+    const page = getCurrentPage();
+    const pid = page ? getPageSaveId(page) : null;
+    const cur = pid ? getPageDirtyState(pid) : 'editing';
+    const btnText = cur === 'saved' ? 'Edit' : 'Save';
+    const statusText =
+      cur === 'saved' ? 'Saved ✓' : cur === 'unsaved' ? 'Unsaved changes' : 'Editing';
+    const ariaLabel = cur === 'saved' ? 'Edit page' : 'Save page';
+    bar.innerHTML =
+      '<button type="button" class="memorium-save-btn" aria-label="' +
+      ariaLabel +
+      '">' +
+      btnText +
+      '</button><span class="memorium-save-status" aria-live="polite">' +
+      statusText +
+      '</span>';
+    const saveBtn = bar.querySelector('.memorium-save-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        const pg = getCurrentPage();
+        const id = pg ? getPageSaveId(pg) : null;
+        const st = id ? getPageDirtyState(id) : 'editing';
+        if (st === 'saved') enterEditMode();
+        else saveCurrentPageImmediate();
+      });
+    }
+    const targetRow = document.querySelector('.memorium-nav-row');
+    if (targetRow && !targetRow.querySelector('.memorium-save-edit-bar'))
+      targetRow.appendChild(bar);
+    else if (!targetRow) {
+      // fallback: attach to workspace
+      const vp = document.querySelector('.memorium-zoom-viewport');
+      if (vp && vp.parentElement) vp.parentElement.appendChild(bar);
+    }
+  }
+  function maybeSaveBeforeNav() {
+    const page = getCurrentPage();
+    const pid = page ? getPageSaveId(page) : null;
+    if (!pid) return Promise.resolve(true);
+    const st = getPageDirtyState(pid);
+    if (st === 'saved') return Promise.resolve(true);
+    const area = getCurrentWritingArea();
+    if (!area) return Promise.resolve(true);
+    const curHtml = area.innerHTML;
+    const last = lastSavedContentById[pid];
+    if (last !== undefined && curHtml === last) {
+      setPageDirtyState(pid, 'saved');
+      updateSaveEditUI();
+      return Promise.resolve(true);
+    }
+    if (st === 'unsaved' || (st === 'editing' && last !== undefined && curHtml !== last)) {
+      return saveCurrentPageImmediate().then(ok => {
+        if (!ok) {
+          const proceed = window.confirm('Save failed. Leave page and discard unsaved changes?');
+          return proceed;
+        }
+        return true;
+      });
+    }
+    // editing with no prior save snapshot -> just update local and mark saved? treat as unsaved so save
+    if (st === 'editing' && last === undefined && curHtml.trim() !== '') {
+      return saveCurrentPageImmediate();
+    }
+    return Promise.resolve(true);
   }
 
   // Elements
@@ -312,14 +649,104 @@
 
   function loadPage(index) {
     if (index < 0 || index >= state.pages.length) return false;
-    // save current before switching
-    savePage();
+    // Guard: attempt immediate save of dirty current page before leaving (page-specific)
+    const cur = getCurrentPage();
+    const curPid = cur ? getPageSaveId(cur) : null;
+    const curState = curPid ? getPageDirtyState(curPid) : null;
+    const needsSave =
+      curPid &&
+      (curState === 'unsaved' ||
+        (curState === 'editing' && lastSavedContentById[curPid] !== undefined));
+    if (needsSave) {
+      const area = getCurrentWritingArea();
+      const curHtml = area ? area.innerHTML : null;
+      const last = curPid ? lastSavedContentById[curPid] : undefined;
+      if (curHtml !== null && last !== undefined && curHtml !== last) {
+        // Force immediate persist before navigating (sync local + async API fire)
+        const page = cur;
+        page.content = curHtml;
+        try {
+          saveState();
+        } catch (_) {}
+        setPageDirtyState(curPid, 'saved');
+        lastSavedContentById[curPid] = curHtml;
+        // Async API without blocking navigation (but still attempt)
+        if (
+          window.MemoriumAPI &&
+          window.MemoriumAPI.isAuthed &&
+          window.MemoriumAPI.isAuthed() &&
+          page._apiId
+        ) {
+          window.MemoriumAPI.updatePage(page._apiId, {
+            content: curHtml,
+            theme: page.theme,
+            paper: page.paper,
+            date: page.date,
+            mood: page.mood,
+            weather: page.weather,
+            location: page.location,
+          }).catch(() => {
+            // If API fails, revert to unsaved and warn on next interaction
+            setPageDirtyState(curPid, 'unsaved');
+            updateSaveEditUI();
+            if (window.MemoriumUtils)
+              window.MemoriumUtils.showToast(
+                'Save failed before page turn — content kept locally',
+                'error'
+              );
+          });
+        }
+        updateSaveEditUI();
+      } else if (curHtml !== null && last === undefined) {
+        // Editing new page with no snapshot yet: snapshot as saved if navigating away? keep as editing
+        // Just ensure local state updated
+        savePage();
+      } else {
+        savePage();
+      }
+    } else {
+      // No dirty, still ensure current content saved locally for safety (contenteditable may have changed without marking)
+      // Only if area is editable and has diverged silently
+      try {
+        savePage();
+      } catch (_) {}
+    }
     state.currentPageIndex = index;
     saveState();
     renderCurrentPage();
     updateNavButtons();
     updatePageNumbers();
     renderNavigationHints();
+    // Refresh Save/Edit for newly active page (per-page)
+    try {
+      const np = getCurrentPage();
+      const npid = np ? getPageSaveId(np) : null;
+      const narea = getCurrentWritingArea();
+      if (npid && narea && lastSavedContentById[npid] === undefined) {
+        const hasPersistedContent = np.content != null && String(np.content).trim() !== '';
+        const isApiPage = !!np._apiId;
+        if (hasPersistedContent && isApiPage) {
+          lastSavedContentById[npid] = narea.innerHTML;
+          setPageDirtyState(npid, 'saved');
+          narea.contentEditable = 'false';
+        } else {
+          lastSavedContentById[npid] = narea.innerHTML;
+          setPageDirtyState(npid, 'editing');
+          narea.contentEditable = 'true';
+        }
+      }
+      updateSaveEditUI();
+      if (narea && !narea._saveEditInputWired) {
+        narea._saveEditInputWired = true;
+        narea.addEventListener('input', () => {
+          const p = getCurrentPage();
+          const id = p ? getPageSaveId(p) : null;
+          if (!id) return;
+          syncDirtyFromContent(id, narea.innerHTML);
+          updateSaveEditUI();
+        });
+      }
+    } catch (_) {}
     return true;
   }
 
@@ -470,12 +897,45 @@
     renderDecorations();
     // notify theme manager of current theme
     if (window.MemoriumTheme) {
-      // set dot highlight to current page theme
       const curTheme = normalizeTheme(page.theme || 'classic-leather');
       document.querySelectorAll('.theme-dot').forEach(d => {
         d.classList.toggle('active', d.dataset.theme === curTheme);
       });
     }
+    // 11Y: refresh Save/Edit for newly rendered page (per-page, no dirty on render)
+    try {
+      const curPg = getCurrentPage();
+      const curPid = curPg ? getPageSaveId(curPg) : null;
+      const curArea = getCurrentWritingArea();
+      if (curPid && curArea && lastSavedContentById[curPid] === undefined) {
+        const hasPersistedContent = curPg.content != null && String(curPg.content).trim() !== '';
+        const isApiPage = !!curPg._apiId;
+        if (hasPersistedContent && isApiPage) {
+          lastSavedContentById[curPid] = curArea.innerHTML;
+          setPageDirtyState(curPid, 'saved');
+          curArea.contentEditable = 'false';
+        } else {
+          lastSavedContentById[curPid] = curArea.innerHTML;
+          setPageDirtyState(curPid, 'editing');
+          curArea.contentEditable = 'true';
+        }
+      } else if (curPid && curArea) {
+        // Ensure contentEditable matches saved state without marking dirty
+        const st = getPageDirtyState(curPid);
+        curArea.contentEditable = st === 'saved' ? 'false' : 'true';
+      }
+      updateSaveEditUI();
+      if (curArea && !curArea._saveEditInputWired) {
+        curArea._saveEditInputWired = true;
+        curArea.addEventListener('input', () => {
+          const p = getCurrentPage();
+          const id = p ? getPageSaveId(p) : null;
+          if (!id) return;
+          syncDirtyFromContent(id, curArea.innerHTML);
+          updateSaveEditUI();
+        });
+      }
+    } catch (_) {}
   }
 
   // ============================================================
@@ -2015,7 +2475,7 @@
     const navContainer = document.createElement('div');
     navContainer.className = 'notebook-nav-container';
     navContainer.style.cssText =
-      'display:flex;gap:1rem;justify-content:center;align-items:center;margin:1rem auto;width:max-content';
+      'display:flex;gap:1rem;justify-content:center;align-items:center;margin:0;width:max-content';
     navContainer.appendChild(navPrev);
     // page indicator
     const indicator = document.createElement('span');
@@ -2024,8 +2484,71 @@
       'font-family:var(--heading-font);font-size:.9rem;color:var(--text-muted);min-width:70px;text-align:center';
     navContainer.appendChild(indicator);
     navContainer.appendChild(navNext);
-    // insert after notebook
-    notebookEl.parentNode.insertBefore(navContainer, notebookEl.nextSibling);
+    // --- 11X: zoom viewport + nav row (diary-only zoom, controls outside transform) ---
+    // Workspace structure required: viewport wraps ONLY notebook, controls are siblings outside transform
+    const viewport = ensureZoomViewport();
+    const workspace = viewport ? viewport.parentElement : notebookEl.parentElement;
+    // Create navRow outside viewport so zoom never scales Prev/Next/zoom/Save/Edit
+    let navRow = workspace ? workspace.querySelector('.memorium-nav-row') : null;
+    if (!navRow) {
+      navRow = document.createElement('div');
+      navRow.className = 'memorium-nav-row';
+      navRow.style.cssText =
+        'display:flex;gap:0.75rem;justify-content:center;align-items:center;flex-wrap:wrap;margin:0.85rem auto 0;width:max-content;max-width:96vw;';
+      navRow.appendChild(navContainer);
+      const zoomControl = createZoomControl();
+      navRow.appendChild(zoomControl);
+      // Insert navRow after viewport (outside zoom transform)
+      if (viewport && viewport.parentNode) {
+        viewport.parentNode.insertBefore(navRow, viewport.nextSibling);
+      } else {
+        notebookEl.parentNode.insertBefore(navRow, notebookEl.nextSibling);
+      }
+    } else {
+      // Reuse existing navRow, ensure navContainer + zoom inside
+      if (!navRow.contains(navContainer)) navRow.appendChild(navContainer);
+      const existingZoom = document.querySelector('.memorium-zoom-control');
+      const zoomControl = existingZoom || createZoomControl();
+      if (!navRow.contains(zoomControl)) navRow.appendChild(zoomControl);
+    }
+    // Initialize zoom UI and apply persisted level (diary-only transform)
+    applyZoom(zoomLevel);
+    updateZoomUI();
+
+    // --- 11Y — init Save/Edit bar using module-scope coherent impl ---
+    addSaveEditButtons();
+    (function initSaveEditSnapshot() {
+      const pg = getCurrentPage();
+      const pid = pg ? getPageSaveId(pg) : null;
+      const area = getCurrentWritingArea();
+      if (pid && area) {
+        if (lastSavedContentById[pid] === undefined) {
+          const hasPersistedContent = pg.content != null && String(pg.content).trim() !== '';
+          const isApiPage = !!pg._apiId;
+          if (hasPersistedContent && isApiPage) {
+            lastSavedContentById[pid] = area.innerHTML;
+            setPageDirtyState(pid, 'saved');
+            area.contentEditable = 'false';
+          } else {
+            lastSavedContentById[pid] = area.innerHTML;
+            setPageDirtyState(pid, 'editing');
+            area.contentEditable = 'true';
+          }
+        }
+      }
+      updateSaveEditUI();
+      const currentArea = getCurrentWritingArea();
+      if (currentArea && !currentArea._saveEditInputWired) {
+        currentArea._saveEditInputWired = true;
+        currentArea.addEventListener('input', () => {
+          const p = getCurrentPage();
+          const id = p ? getPageSaveId(p) : null;
+          if (!id) return;
+          syncDirtyFromContent(id, currentArea.innerHTML);
+          updateSaveEditUI();
+        });
+      }
+    })();
 
     // style for turn animation
     if (!document.getElementById('memorium-turn-style')) {
@@ -2593,10 +3116,19 @@
       updateViewToggleUI();
       // Also apply on view change from other tabs? no
     })();
-    // update indicator text
+    // update indicator text — spread-aware (Page 1–2 / N) if supported
     const upd = () => {
       const ind = document.getElementById('page-indicator');
-      if (ind) ind.textContent = `Page ${state.currentPageIndex + 1} / ${state.pages.length}`;
+      if (!ind) return;
+      if (!isSingleView() && state.pages.length > 1) {
+        const spreadStart = Math.floor(state.currentPageIndex / 2) * 2;
+        const a = spreadStart + 1;
+        const b = Math.min(spreadStart + 2, state.pages.length);
+        if (a !== b) ind.textContent = `Page ${a}\u2013${b} / ${state.pages.length}`;
+        else ind.textContent = `Page ${a} / ${state.pages.length}`;
+      } else {
+        ind.textContent = `Page ${state.currentPageIndex + 1} / ${state.pages.length}`;
+      }
     };
     upd();
     // patch updateNavButtons to also update indicator
@@ -2606,6 +3138,14 @@
       upd();
     };
     updateNavButtons();
+    // 11X zoom init — ensure viewport and persisted zoom, re-apply on view change
+    ensureZoomViewport();
+    applyZoom(zoomLevel);
+    updateZoomUI();
+    document.addEventListener('memorium:viewchange', () => {
+      ensureZoomViewport();
+      applyZoom(zoomLevel);
+    });
   }
 
   // Expose required names globally for testing / reuse
@@ -2631,6 +3171,9 @@
     getViewMode,
     setViewMode,
     isSingleView,
+    getZoom,
+    setZoom,
+    applyZoom,
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

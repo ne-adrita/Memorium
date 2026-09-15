@@ -690,3 +690,307 @@ body.memorium-drawer-ready .writing-tools-bar {
 @media (max-width: 768px) {
   #notebook-section { padding: 0.5rem 0.35rem 0.9rem !important; }
 }
+
+/* ============================================================
+   11X — SINGLE-PAGE / TWO-PAGE / INDEPENDENT ZOOM
+   - Removes artificial leather frame in 1-page mode
+   - 1-page ~80% viewport centered, no blank second page
+   - 2-page equal spread, subtle seam only in spread
+   - Zoom affects only diary, 50-200% via scale, viewport handles overflow
+   ============================================================ */
+
+/* --- Cause of artificial border (documented): ---
+   .notebook outer leather frame was applied in both views:
+   .notebook { background:#5c3d2e; padding:12px; border-radius 8px 16px; box-shadow leather + 8px 0 0 #4a2e20 }
+   .notebook::before (leather grain) + ::after (gold corner border 1px solid rgba(201,162,39,0.2))
+   .notebook-cover (4 edges + 4 corners) + .notebook-spine (35px leather gradient)
+   In single-page these produced a rectangular UI frame around the paper.
+   11X removes them only in single-page.
+*/
+
+/* --- SINGLE-PAGE: frameless, large, centered --- */
+#notebook-section .notebook.view-single {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  overflow: visible !important;
+}
+#notebook-section .notebook.view-single::before,
+#notebook-section .notebook.view-single::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+#notebook-section .notebook.view-single .notebook-cover,
+#notebook-section .notebook.view-single .notebook-spine,
+#notebook-section .notebook.view-single .notebook-bookmark,
+#notebook-section .notebook.view-single .notebook-nav-hint {
+  display: none !important;
+}
+/* Hide second page completely — no empty placeholder */
+#notebook-section .notebook.view-single .notebook-page--right {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+/* Single page itself: ~80% viewport, natural paper edge only */
+#notebook-section .notebook.view-single .notebook-page--left {
+  flex: none !important;
+  width: min(80vw, 740px) !important;
+  max-width: 80vw !important;
+  min-width: 0 !important;
+  /* Height preserves page aspect (~1.35 ratio) — 80vh target, capped */
+  height: min(80vh, 860px) !important;
+  min-height: min(80vh, 860px) !important;
+  max-height: min(80vh, 860px) !important;
+  /* Remove spread-specific radii/shadows that assumed leather frame */
+  border-radius: 3px !important;
+  border: none !important;
+  box-shadow:
+    0 14px 36px rgba(0,0,0,0.18),
+    0 4px 14px rgba(0,0,0,0.12),
+    0 0 0 1px rgba(0,0,0,0.04) !important;
+  margin: 0 auto !important;
+  overflow: hidden !important;
+  /* Ensure contenteditable writing stays inside */
+  display: flex !important;
+  flex-direction: column !important;
+}
+/* Ensure writing area fills frameless page */
+#notebook-section .notebook.view-single .page-body {
+  flex: 1 !important;
+  min-height: 320px !important;
+}
+#notebook-section .notebook.view-single .page-writing-area {
+  min-height: 360px !important;
+}
+
+/* --- TWO-PAGE: equal pages, subtle seam, no empty space --- */
+#notebook-section .notebook.view-spread {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: stretch !important;
+  /* Keep leather frame in spread only */
+  gap: 0 !important;
+}
+#notebook-section .notebook.view-spread .notebook-page--left,
+#notebook-section .notebook.view-spread .notebook-page--right {
+  flex: 1 1 50% !important;
+  width: 50% !important;
+  max-width: 50% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+/* Subtle physical seam only in spread */
+#notebook-section .notebook.view-spread .notebook-spine {
+  display: block !important;
+  visibility: visible !important;
+  width: 18px !important; /* narrower, subtle vs old 35px */
+  flex-shrink: 0 !important;
+  background: linear-gradient(to right, #2a1810 0%, #3c2418 22%, #5a3d2e 48%, #3c2418 78%, #2a1810 100%) !important;
+  border-radius: 2px !important;
+  box-shadow: inset 1px 0 4px rgba(0,0,0,0.35), inset -1px 0 3px rgba(0,0,0,0.2) !important;
+  opacity: 0.95 !important;
+}
+#notebook-section .notebook.view-single .notebook-spine {
+  display: none !important;
+}
+
+/* --- Zoom viewport: handles overflow, centers scaled diary, not nav/controls --- */
+.memorium-zoom-viewport {
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow: auto !important;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  padding: 0.5rem 0.5rem 0.4rem !important;
+  box-sizing: border-box !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(107,79,59,0.18) transparent !important;
+}
+.memorium-zoom-viewport::-webkit-scrollbar { width: 6px; height: 6px; }
+.memorium-zoom-viewport::-webkit-scrollbar-thumb { background: rgba(107,79,59,0.18); border-radius: 999px; }
+/* Keep notebook centered inside viewport even when scaled */
+.memorium-zoom-viewport .notebook {
+  transform-origin: center top !important;
+  will-change: transform !important;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  flex-shrink: 0 !important;
+}
+/* Ensure navRow + zoom controls stay on top and are never clipped by viewport scrolling */
+.memorium-nav-row { position: relative; z-index: 10; }
+.memorium-zoom-control { position: relative; z-index: 10; }
+
+/* --- Navigation row + zoom: vintage, compact, next to nav --- */
+.memorium-nav-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  margin: 0.85rem auto 0 !important;
+  width: max-content !important;
+  max-width: 96vw !important;
+}
+.memorium-nav-row .notebook-nav-container {
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+.memorium-zoom-control {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.32rem !important;
+  padding: 0.28rem 0.38rem !important;
+  background: linear-gradient(180deg, #FFFEFB 0%, #FFF8F0 100%) !important;
+  border: 1.5px solid rgba(107,79,59,0.12) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  font-family: var(--heading-font, 'Cormorant Garamond', serif) !important;
+  flex-shrink: 0 !important;
+}
+.memorium-zoom-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid rgba(107,79,59,0.14) !important;
+  background: linear-gradient(180deg, #FFFEFB 0%, #FFF8F0 100%) !important;
+  color: var(--text-dark, #2F241F) !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: grid !important;
+  place-items: center !important;
+  transition: all 0.16s ease !important;
+  flex-shrink: 0 !important;
+}
+.memorium-zoom-btn:hover {
+  border-color: rgba(201,162,39,0.32) !important;
+  background: rgba(201,162,39,0.08) !important;
+  transform: translateY(-1px) !important;
+}
+.memorium-zoom-btn:active { transform: scale(0.96) !important; }
+.memorium-zoom-btn:disabled {
+  opacity: 0.35 !important;
+  pointer-events: none !important;
+}
+.memorium-zoom-btn:focus-visible { outline: 2px solid var(--accent-gold, #C9A227) !important; outline-offset: 2px !important; }
+.memorium-zoom-value {
+  min-width: 52px !important;
+  text-align: center !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--text-dark, #2F241F) !important;
+  user-select: none !important;
+  padding: 0 0.15rem !important;
+}
+.memorium-zoom-select {
+  border: 1px solid rgba(107,79,59,0.12) !important;
+  border-radius: 999px !important;
+  background: #FFFEFB !important;
+  font-family: var(--heading-font) !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  padding: 0.15rem 0.4rem !important;
+  color: var(--text-dark) !important;
+}
+
+/* --- 11Y Save/Edit bar — vintage diary style --- */
+.memorium-save-edit-bar {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.3rem !important;
+  margin-left: 0.5rem !important;
+}
+.memorium-save-btn {
+  padding: 0.2rem 0.5rem !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  background: linear-gradient(180deg, #FFFEFB 0%, #FFF8F0 100%) !important;
+  border: 1.5px solid rgba(107,79,59,0.18) !important;
+  border-radius: 999px !important;
+  color: var(--text-dark, #2F241F) !important;
+  cursor: pointer !important;
+  transition: all 0.16s ease !important;
+  flex-shrink: 0 !important;
+  min-width: 44px !important;
+}
+.memorium-save-btn:hover {
+  border-color: rgba(201,162,39,0.32) !important;
+  background: rgba(201,162,39,0.08) !important;
+  transform: translateY(-1px) !important;
+}
+.memorium-save-btn:active { transform: scale(0.96) !important; }
+.memorium-save-btn:focus-visible { outline: 2px solid var(--accent-gold, #C9A227) !important; outline-offset: 2px !important; }
+.memorium-save-btn:disabled {
+  opacity: 0.35 !important;
+  pointer-events: none !important;
+}
+.memorium-save-status {
+  font-size: 0.65rem !important;
+  color: var(--text-muted, #6E6259) !important;
+  white-space: nowrap !important;
+  padding: 0 0.2rem !important;
+}
+/* Editing state: button background changes, area remains editable */
+.memorium-save-edit-bar .editing .memorium-save-btn {
+  background: rgba(107,79,59,0.12) !important;
+  border-color: rgba(107,79,59,0.25) !important;
+}
+/* Saved state: show check hint, hide save button */
+.memorium-save-edit-bar .saved .memorium-save-btn { display: none; }
+.memorium-save-edit-bar .saved .memorium-save-status { content: 'Saved ✓'; color: #7A3E3E !important; }
+/* Unsaved changes state */
+.memorium-save-edit-bar .unsaved .memorium-save-status { content: 'Unsaved changes'; color: #7A3E3E !important; }
+
+/* --- Responsive adjustments for 11X --- */
+@media (max-width: 1024px) {
+  #notebook-section .notebook.view-single .notebook-page--left {
+    width: min(84vw, 680px) !important;
+    max-width: 84vw !important;
+    height: min(76vh, 780px) !important;
+    min-height: min(76vh, 780px) !important;
+  }
+}
+@media (max-width: 768px) {
+  #notebook-section .notebook.view-single .notebook-page--left {
+    width: 92vw !important;
+    max-width: 92vw !important;
+    height: auto !important;
+    min-height: 560px !important;
+    max-height: none !important;
+  }
+  #notebook-section .notebook.view-spread .notebook-spine { width: 12px !important; }
+  .memorium-nav-row { gap: 0.6rem !important; padding: 0 0.4rem !important; }
+  .memorium-zoom-viewport { padding: 0.35rem 0.25rem 0.3rem !important; }
+}
+@media (max-width: 480px) {
+  #notebook-section .notebook.view-single .notebook-page--left { width: 94vw !important; max-width: 94vw !important; }
+  .memorium-zoom-value { min-width: 44px !important; font-size: 0.78rem !important; }
+}
