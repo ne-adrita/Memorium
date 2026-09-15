@@ -287,6 +287,61 @@
   position: relative;
 }
 
+/* 11V FULL VIEWPORT — edge-to-edge desk, diary centered */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  min-height: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  background: #3d2e26 !important;
+  overflow-x: hidden !important;
+}
+main {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #3d2e26 !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+}
+#notebook-section {
+  width: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  max-width: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #3d2e26 !important;
+  padding: 1.2rem 0.5rem 1.8rem !important;
+  overflow: visible !important;
+}
+#notebook-section .section-heading {
+  max-width: 700px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+#notebook-section > div[style*="display: flex"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 0.5rem !important;
+  box-sizing: border-box !important;
+  justify-content: center !important;
+  overflow-x: visible !important;
+}
+/* Keep diary physical — do not stretch notebook itself */
+#notebook-section .notebook {
+  flex-shrink: 0;
+}
+
 /* Hide any leftover large empty tool sections that might remain outside drawer */
 body.memorium-drawer-active .theme-family-system,
 body.memorium-drawer-active .pen-holder-system,
