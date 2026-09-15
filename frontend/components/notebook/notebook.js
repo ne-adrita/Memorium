@@ -288,21 +288,22 @@
     if (!area) return Promise.resolve(false);
     const content = area.innerHTML;
     const pid = getPageSaveId(page);
+    // Always update local state immediately (never lose content), but dirty logic waits for API success
     page.content = content;
     try {
       saveState();
     } catch (_) {}
-    if (pid) {
-      setPageDirtyState(pid, 'saved');
-      lastSavedContentById[pid] = content;
-    }
-    updateSaveEditUI();
-    if (
+    const isApiPage =
       window.MemoriumAPI &&
       window.MemoriumAPI.isAuthed &&
       window.MemoriumAPI.isAuthed() &&
-      page._apiId
-    ) {
+      page._apiId;
+    if (isApiPage) {
+      // For API pages, keep as unsaved until server confirms, so Next stays disabled on failure
+      const prevState = pid ? getPageDirtyState(pid) : 'editing';
+      const prevLast = pid ? lastSavedContentById[pid] : undefined;
+      // Optimistically show saving feedback but keep Next disabled until confirmed; we temporarily mark saved in UI
+      // Instead we wait for confirmation: call API first, then mark saved
       return window.MemoriumAPI.updatePage(page._apiId, {
         content,
         theme: page.theme,
@@ -313,15 +314,54 @@
         location: page.location,
       })
         .then(() => {
+          if (pid) {
+            setPageDirtyState(pid, 'saved');
+            lastSavedContentById[pid] = content;
+          }
+          updateSaveEditUI();
+          updateNavButtons();
           if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved ✓', 'success');
           return true;
         })
         .catch(err => {
-          if (window.MemoriumUtils)
-            window.MemoriumUtils.showToast('Save failed: ' + (err.message || 'error'), 'error');
+          // Keep content intact, remain dirty, Next stays disabled
+          if (pid) {
+            // Restore previous dirty state if we had optimistically changed; ensure unsaved
+            if (prevLast === undefined || content !== prevLast) {
+              setPageDirtyState(pid, 'unsaved');
+            } else {
+              setPageDirtyState(pid, prevState);
+            }
+          }
+          updateSaveEditUI();
+          updateNavButtons();
+          const msg = err && err.message ? err.message : 'error';
+          if (err && (err.status === 401 || err.status === 403)) {
+            if (window.MemoriumUtils)
+              window.MemoriumUtils.showToast(
+                'Save failed: unauthorized (' + err.status + ')',
+                'error'
+              );
+          } else if (err && err.message && /validation/i.test(err.message)) {
+            if (window.MemoriumUtils)
+              window.MemoriumUtils.showToast('Save failed: validation error', 'error');
+          } else if (!navigator.onLine) {
+            if (window.MemoriumUtils)
+              window.MemoriumUtils.showToast('Save failed: network error', 'error');
+          } else {
+            if (window.MemoriumUtils)
+              window.MemoriumUtils.showToast('Save failed: ' + msg, 'error');
+          }
           return false;
         });
     }
+    // Local-only mode: immediate success
+    if (pid) {
+      setPageDirtyState(pid, 'saved');
+      lastSavedContentById[pid] = content;
+    }
+    updateSaveEditUI();
+    updateNavButtons();
     if (window.MemoriumUtils) window.MemoriumUtils.showToast('Saved ✓', 'success');
     return Promise.resolve(true);
   }
@@ -342,6 +382,7 @@
       } catch (_) {}
     }
     updateSaveEditUI();
+    updateNavButtons();
   }
   function updateSaveEditUI() {
     const saveEditBar = document.querySelector('.memorium-save-edit-bar');
@@ -372,6 +413,10 @@
       saveBtn.disabled = false;
       if (area) area.contentEditable = 'true';
     }
+    // Keep Next gating in sync with dirty state
+    try {
+      updateNavButtons();
+    } catch (_) {}
   }
   function addSaveEditButtons() {
     if (document.querySelector('.memorium-save-edit-bar')) return;
@@ -717,15 +762,15 @@
     updateNavButtons();
     updatePageNumbers();
     renderNavigationHints();
-    // Refresh Save/Edit for newly active page (per-page)
+    // Refresh Save/Edit for newly active page (per-page) — next page must be writable if new
     try {
       const np = getCurrentPage();
       const npid = np ? getPageSaveId(np) : null;
       const narea = getCurrentWritingArea();
       if (npid && narea && lastSavedContentById[npid] === undefined) {
-        const hasPersistedContent = np.content != null && String(np.content).trim() !== '';
+        const isNew = isNewEmptyPageContent(np.content);
         const isApiPage = !!np._apiId;
-        if (hasPersistedContent && isApiPage) {
+        if (!isNew && isApiPage) {
           lastSavedContentById[npid] = narea.innerHTML;
           setPageDirtyState(npid, 'saved');
           narea.contentEditable = 'false';
@@ -736,6 +781,7 @@
         }
       }
       updateSaveEditUI();
+      updateNavButtons();
       if (narea && !narea._saveEditInputWired) {
         narea._saveEditInputWired = true;
         narea.addEventListener('input', () => {
@@ -744,6 +790,7 @@
           if (!id) return;
           syncDirtyFromContent(id, narea.innerHTML);
           updateSaveEditUI();
+          updateNavButtons();
         });
       }
     } catch (_) {}
@@ -902,15 +949,16 @@
         d.classList.toggle('active', d.dataset.theme === curTheme);
       });
     }
-    // 11Y: refresh Save/Edit for newly rendered page (per-page, no dirty on render)
+    // 11Y: refresh Save/Edit for newly rendered page (per-page, no dirty on render) + Next gating
     try {
       const curPg = getCurrentPage();
       const curPid = curPg ? getPageSaveId(curPg) : null;
       const curArea = getCurrentWritingArea();
       if (curPid && curArea && lastSavedContentById[curPid] === undefined) {
-        const hasPersistedContent = curPg.content != null && String(curPg.content).trim() !== '';
+        const isNew = isNewEmptyPageContent(curPg.content);
         const isApiPage = !!curPg._apiId;
-        if (hasPersistedContent && isApiPage) {
+        // If page has real user content from DB, treat as saved read-only; if new/empty/placeholder, make writable
+        if (!isNew && isApiPage) {
           lastSavedContentById[curPid] = curArea.innerHTML;
           setPageDirtyState(curPid, 'saved');
           curArea.contentEditable = 'false';
@@ -920,11 +968,11 @@
           curArea.contentEditable = 'true';
         }
       } else if (curPid && curArea) {
-        // Ensure contentEditable matches saved state without marking dirty
         const st = getPageDirtyState(curPid);
         curArea.contentEditable = st === 'saved' ? 'false' : 'true';
       }
       updateSaveEditUI();
+      updateNavButtons();
       if (curArea && !curArea._saveEditInputWired) {
         curArea._saveEditInputWired = true;
         curArea.addEventListener('input', () => {
@@ -933,6 +981,7 @@
           if (!id) return;
           syncDirtyFromContent(id, curArea.innerHTML);
           updateSaveEditUI();
+          updateNavButtons();
         });
       }
     } catch (_) {}
@@ -1209,18 +1258,86 @@
     // numbers already updated in renderCurrentPage, also update header if needed
   }
 
+  // Helper: is current page dirty (needs Save before Next)
+  function isCurrentPageDirty() {
+    const cur = getCurrentPage();
+    const pid = cur ? getPageSaveId(cur) : null;
+    if (!pid) return false;
+    const st = getPageDirtyState(pid);
+    if (st === 'unsaved') return true;
+    if (st === 'editing') {
+      const last = lastSavedContentById[pid];
+      const area = getCurrentWritingArea();
+      if (last === undefined) {
+        // New page never saved: dirty if it has any user-typed content beyond empty placeholder
+        if (area) {
+          const html = area.innerHTML.trim();
+          // If area is empty or just placeholder, not dirty yet; typing makes dirty
+          return html !== '' && html !== last;
+        }
+        return true;
+      }
+      if (area && area.innerHTML !== last) return true;
+    }
+    if (st === 'saved') return false;
+    // editing with no last snapshot yet: consider dirty if content non-empty and not saved
+    return st === 'editing' && st !== 'saved';
+  }
+  function isNewEmptyPageContent(content) {
+    if (!content || String(content).trim() === '') return true;
+    const c = String(content).trim();
+    const placeholders = [
+      '<p class="page-paragraph"><span class="page-first-letter">D</span>ear Diary...</p>',
+      '<p><span class="page-first-letter">D</span>ear Diary…</p>',
+      '<p><span class="page-first-letter">D</span>ear Diary...</p>',
+      '<p class="page-paragraph"><span class="page-first-letter">D</span>ear Diary…</p>',
+    ];
+    if (placeholders.some(ph => c === ph.trim())) return true;
+    // Also handle stripped text placeholder
+    const textOnly = c.replace(/<[^>]*>/g, '').trim();
+    if (textOnly === 'Dear Diary...' || textOnly === 'Dear Diary…') return true;
+    return false;
+  }
   function updateNavButtons() {
     if (!navPrev || !navNext) return;
     const canPrev = state.currentPageIndex > 0;
-    const canNext = state.currentPageIndex < state.pages.length - 1;
-    // with spread model we actually have only 2 pages visible together, prev/next switches spread focus
-    // keep simple: disable at ends
+    // Next gating: disabled if dirty, enabled only after successful Save
+    const dirty = isCurrentPageDirty();
+    let canNext;
+    if (dirty) {
+      canNext = false;
+    } else {
+      const hasNextSlot = state.currentPageIndex < state.pages.length - 1;
+      const atLast = state.currentPageIndex >= state.pages.length - 1;
+      const cur = getCurrentPage();
+      const pid = cur ? getPageSaveId(cur) : null;
+      const saved = pid ? getPageDirtyState(pid) === 'saved' : false;
+      // At last page, allow Next to create new page only if current is saved clean
+      if (hasNextSlot) canNext = true;
+      else if (atLast && saved) canNext = true;
+      else canNext = false;
+    }
     navPrev.style.opacity = canPrev ? '1' : '0.45';
     navPrev.style.pointerEvents = canPrev ? 'auto' : 'none';
+    navPrev.style.cursor = canPrev ? 'pointer' : 'not-allowed';
+    navPrev.disabled = !canPrev;
     navPrev.setAttribute('aria-disabled', String(!canPrev));
     navNext.style.opacity = canNext ? '1' : '0.45';
     navNext.style.pointerEvents = canNext ? 'auto' : 'none';
+    navNext.style.cursor = canNext ? 'pointer' : 'not-allowed';
+    navNext.disabled = !canNext;
     navNext.setAttribute('aria-disabled', String(!canNext));
+    // Tooltip for disabled Next when dirty
+    if (dirty) {
+      navNext.title = 'Save the current page to continue';
+    } else if (!canNext && state.currentPageIndex >= state.pages.length - 1) {
+      const cur = getCurrentPage();
+      const pid = cur ? getPageSaveId(cur) : null;
+      const saved = pid ? getPageDirtyState(pid) === 'saved' : false;
+      navNext.title = saved ? 'Create next page' : 'No more pages';
+    } else {
+      navNext.title = canNext ? 'Next page' : 'No more pages';
+    }
   }
 
   function renderNavigationHints() {
@@ -1235,13 +1352,64 @@
   // NAVIGATION
   // ============================================================
   function nextPage() {
-    if (state.currentPageIndex >= state.pages.length - 1) return false;
+    // Gated: if dirty, Next is disabled — block programmatic navigation too
+    if (isCurrentPageDirty()) {
+      // Visually Next is disabled; also show hint
+      updateNavButtons();
+      if (window.MemoriumUtils)
+        window.MemoriumUtils.showToast('Save the page before continuing', 'info');
+      return false;
+    }
+    // At last page, Next should create/open next page after successful save (page-by-page flow)
+    if (state.currentPageIndex >= state.pages.length - 1) {
+      // Only allow creation if current is saved clean
+      const cur = getCurrentPage();
+      const pid = cur ? getPageSaveId(cur) : null;
+      const saved = pid ? getPageDirtyState(pid) === 'saved' : false;
+      if (!saved) {
+        updateNavButtons();
+        return false;
+      }
+      animateTurn('next');
+      try {
+        if (window.MemoriumSound && window.MemoriumSound.playInteraction)
+          window.MemoriumSound.playInteraction('page-flip');
+      } catch (_) {}
+      // Use existing page creation logic (preserves theme/paper/pen handling, API via journal.js override)
+      const result = createPage({});
+      // If createPage is async via journal.js override, it will handle loading new page; ensure Next stays disabled for new page
+      // For local fallback (synchronous), loadPage already called inside createPage
+      return result ? true : false;
+    }
     animateTurn('next');
     try {
       if (window.MemoriumSound && window.MemoriumSound.playInteraction)
         window.MemoriumSound.playInteraction('page-flip');
     } catch (_) {}
-    return loadPage(state.currentPageIndex + 1);
+    const nextIdx = state.currentPageIndex + 1;
+    const ok = loadPage(nextIdx);
+    // After successful navigation, next page must be writable/editable automatically
+    if (ok) {
+      try {
+        const np = getCurrentPage();
+        const npid = np ? getPageSaveId(np) : null;
+        if (npid) {
+          // For newly opened page, ensure it is writable. If it's an existing saved page with custom content, keep saved read-only — but spec for sequential flow expects writable.
+          // We force next page to editing if it was newly created empty/placeholder; existing pages with user content stay saved.
+          const isNew = isNewEmptyPageContent(np.content);
+          const narea = getCurrentWritingArea();
+          if (isNew) {
+            setPageDirtyState(npid, 'editing');
+            lastSavedContentById[npid] = narea ? narea.innerHTML : np.content || '';
+            if (narea) narea.contentEditable = 'true';
+          }
+          // Ensure Next is disabled for the new dirty/editing page until it is saved
+          updateSaveEditUI();
+          updateNavButtons();
+        }
+      } catch (_) {}
+    }
+    return ok;
   }
   function previousPage() {
     if (state.currentPageIndex <= 0) return false;
@@ -2523,9 +2691,9 @@
       const area = getCurrentWritingArea();
       if (pid && area) {
         if (lastSavedContentById[pid] === undefined) {
-          const hasPersistedContent = pg.content != null && String(pg.content).trim() !== '';
+          const isNew = isNewEmptyPageContent(pg.content);
           const isApiPage = !!pg._apiId;
-          if (hasPersistedContent && isApiPage) {
+          if (!isNew && isApiPage) {
             lastSavedContentById[pid] = area.innerHTML;
             setPageDirtyState(pid, 'saved');
             area.contentEditable = 'false';
@@ -2537,6 +2705,7 @@
         }
       }
       updateSaveEditUI();
+      updateNavButtons();
       const currentArea = getCurrentWritingArea();
       if (currentArea && !currentArea._saveEditInputWired) {
         currentArea._saveEditInputWired = true;
@@ -2546,6 +2715,7 @@
           if (!id) return;
           syncDirtyFromContent(id, currentArea.innerHTML);
           updateSaveEditUI();
+          updateNavButtons();
         });
       }
     })();
