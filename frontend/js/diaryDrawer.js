@@ -130,6 +130,10 @@
         <button type="button" class="memorium-drawer-close" aria-label="Close diary tools">✕</button>
       </div>
       <div class="memorium-drawer-body" id="memorium-drawer-body"></div>
+      <footer class="memorium-drawer-footer" aria-label="Memorium footer">
+        <p>© 2026 Memorium. Crafted for memory keepers.</p>
+        <p class="drawer-footer-quote">“Some memories should grow old with you.”</p>
+      </footer>
     `;
     document.body.appendChild(drawer);
     drawer.querySelector('.memorium-drawer-close').addEventListener('click', closeDrawer);
@@ -200,20 +204,26 @@
     const wrap = document.createElement('div');
     wrap.className = 'drawer-details-grid';
     wrap.innerHTML = `
-      <div class="drawer-details-row">
-        <label class="drawer-details-label" for="drawer-date">Date</label>
-        <input type="date" id="drawer-date" class="drawer-details-input" aria-label="Date">
+      <div class="drawer-details-row" style="display:flex;gap:0.6rem;">
+        <div style="flex:1;display:flex;flex-direction:column;gap:0.3rem;">
+          <label class="drawer-details-label" for="drawer-date">Date <span aria-hidden="true">📅</span></label>
+          <input type="date" id="drawer-date" class="drawer-details-input" aria-label="Date">
+        </div>
+        <div style="flex:0 0 110px;display:flex;flex-direction:column;gap:0.3rem;">
+          <label class="drawer-details-label" for="drawer-time">Time <span aria-hidden="true">🕒</span></label>
+          <input type="time" id="drawer-time" class="drawer-details-input" aria-label="Time">
+        </div>
       </div>
       <div class="drawer-details-row">
-        <span class="drawer-details-label">Mood</span>
+        <span class="drawer-details-label">Mood <span aria-hidden="true">😊</span></span>
         <div class="drawer-mood-grid" role="group" aria-label="Mood"></div>
       </div>
       <div class="drawer-details-row">
-        <span class="drawer-details-label">Weather</span>
+        <span class="drawer-details-label">Weather <span aria-hidden="true">☀️</span></span>
         <div class="drawer-weather-grid" role="group" aria-label="Weather"></div>
       </div>
       <div class="drawer-details-row">
-        <label class="drawer-details-label" for="drawer-location">Location</label>
+        <label class="drawer-details-label" for="drawer-location">Location <span aria-hidden="true">📍</span></label>
         <input type="text" id="drawer-location" class="drawer-details-input" placeholder="NSU" maxlength="120" autocomplete="off" aria-label="Location">
       </div>
       <p style="font-family:var(--heading-font);font-size:0.7rem;color:var(--text-muted);margin-top:0.2rem">Edits apply to the current page and sync to the page's own metadata bar.</p>
@@ -238,6 +248,7 @@
     const moodGrid = wrap.querySelector('.drawer-mood-grid');
     const weatherGrid = wrap.querySelector('.drawer-weather-grid');
     const dateInput = wrap.querySelector('#drawer-date');
+    const timeInput = wrap.querySelector('#drawer-time');
     const locInput = wrap.querySelector('#drawer-location');
 
     function getCurrentPageFromNotebook() {
@@ -254,10 +265,33 @@
       const dt = new Date(d);
       return isNaN(dt.getTime()) ? '' : dt.toISOString().slice(0, 10);
     }
+    function normalizeTime(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? '' : dt.toISOString().slice(11, 16);
+    }
+    function getCombinedDateTime() {
+      const dateVal = dateInput.value;
+      const timeVal = timeInput.value;
+      if (!dateVal && !timeVal) return null;
+      if (!dateVal && timeVal) {
+        const today = new Date().toISOString().slice(0, 10);
+        const iso = new Date(`${today}T${timeVal}:00`).toISOString();
+        return isNaN(new Date(iso).getTime()) ? null : iso;
+      }
+      if (dateVal && !timeVal) {
+        const iso = new Date(`${dateVal}T00:00:00`).toISOString();
+        return isNaN(new Date(iso).getTime()) ? null : iso;
+      }
+      const iso = new Date(`${dateVal}T${timeVal}:00`).toISOString();
+      return isNaN(new Date(iso).getTime()) ? null : iso;
+    }
     function updateUIFromPage() {
       const page = getCurrentPageFromNotebook();
       if (!page) return;
       dateInput.value = normalizeDate(page.date);
+      const t = normalizeTime(page.date);
+      if (document.activeElement !== timeInput) timeInput.value = t;
       if (document.activeElement !== locInput) locInput.value = page.location || '';
       const curMood = page.mood || null;
       moodGrid.querySelectorAll('.drawer-mood-btn').forEach(b => {
@@ -291,6 +325,20 @@
       setTimeout(updateUIFromPage, 50);
       setTimeout(updateUIFromPage, 300);
     }
+
+    // Date + Time — combine to single ISO for diaryDetails
+    dateInput.addEventListener('change', () => {
+      const iso = getCombinedDateTime();
+      dispatchMeta('date', iso);
+    });
+    timeInput.addEventListener('change', () => {
+      const iso = getCombinedDateTime();
+      dispatchMeta('date', iso);
+    });
+    timeInput.addEventListener('input', () => {
+      const iso = getCombinedDateTime();
+      if (iso) dispatchMeta('date', iso);
+    });
 
     MOODS.forEach(m => {
       const btn = document.createElement('button');

@@ -62,6 +62,51 @@
     nextId: 14,
   };
 
+  // View mode: 'single' (1 page) or 'spread' (2 pages) — beside searchbar
+  const VIEW_STORAGE_KEY = 'memorium_view_mode';
+  let viewMode = (function () {
+    try {
+      const v = localStorage.getItem(VIEW_STORAGE_KEY);
+      if (v === 'single' || v === 'spread') return v;
+    } catch (_) {}
+    return 'spread';
+  })();
+  function isSingleView() {
+    return viewMode === 'single';
+  }
+  function getViewMode() {
+    return viewMode;
+  }
+  function setViewMode(mode) {
+    if (mode !== 'single' && mode !== 'spread') return false;
+    viewMode = mode;
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, viewMode);
+    } catch (_) {}
+    if (notebookEl) {
+      notebookEl.classList.toggle('view-single', isSingleView());
+      notebookEl.classList.toggle('view-spread', !isSingleView());
+      notebookEl.dataset.view = viewMode;
+    }
+    updateViewToggleUI();
+    renderCurrentPage();
+    updateNavButtons();
+    document.dispatchEvent(new CustomEvent('memorium:viewchange', { detail: { view: viewMode } }));
+    return true;
+  }
+  function updateViewToggleUI() {
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      const on = btn.dataset.view === viewMode;
+      btn.setAttribute('aria-pressed', String(on));
+      btn.style.background = on ? '#FFFEFB' : 'transparent';
+      btn.style.borderColor = on ? 'rgba(201,162,39,0.32)' : 'transparent';
+      btn.style.boxShadow = on
+        ? '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
+        : 'none';
+      btn.style.color = on ? '#2F241F' : '#6E6259';
+    });
+  }
+
   // Elements
   let notebookEl = null;
   let leftPageEl = null;
@@ -290,6 +335,69 @@
     const page = getCurrentPage();
     if (!page || !leftPageEl || !rightPageEl) return;
 
+    // Single vs spread view
+    if (isSingleView()) {
+      // Show only current page centered in left slot, hide right
+      rightPageEl.style.display = 'none';
+      leftPageEl.style.display = '';
+      const p = page;
+      p.theme = normalizeTheme(p.theme);
+      p.paper = normalizePaper(p.paper);
+      leftPageEl.dataset.page = String(p.id);
+      leftPageEl.dataset.theme = p.theme || 'classic-leather';
+      leftPageEl.dataset.paper = p.paper || 'plain';
+      leftPageEl.className = leftPageEl.className.replace(/\btheme-[a-z0-9-]+\b/g, '').trim();
+      leftPageEl.classList.add('theme-' + (p.theme || 'classic-leather'));
+      leftPageEl.className = leftPageEl.className.replace(/\bpaper-[a-z0-9-]+\b/g, '').trim();
+      leftPageEl.classList.add('paper-' + (p.paper || 'plain'));
+      let pat = leftPageEl.querySelector('.paper-pattern');
+      if (!pat) {
+        pat = document.createElement('div');
+        pat.className = 'paper-pattern';
+        pat.setAttribute('aria-hidden', 'true');
+        leftPageEl.insertBefore(pat, leftPageEl.firstChild);
+      }
+      if (window.MemoriumThemeConfig && window.MemoriumThemeConfig.THEMES[p.theme]) {
+        leftPageEl.dataset.themeFamily = window.MemoriumThemeConfig.THEMES[p.theme].family;
+      }
+      const slotArea = leftPageEl.querySelector('.page-writing-area');
+      if (slotArea) {
+        writingAreas[p.id] = slotArea;
+        if (p.content != null) slotArea.innerHTML = p.content;
+      } else {
+        const area = writingAreas[p.id];
+        if (area && p.content != null) area.innerHTML = p.content;
+      }
+      const numEl = leftPageEl.querySelector('.page-number');
+      if (numEl) numEl.textContent = p.pageNumber != null ? p.pageNumber : p.id;
+      ensureMetadataBar(leftPageEl, p);
+      // Hide right metadata
+      const rBar = rightPageEl.querySelector('.page-metadata-bar');
+      if (rBar) rBar.style.display = 'none';
+      leftPageEl.classList.add('page-active');
+      rightPageEl.classList.remove('page-active');
+      if (notebookEl) {
+        notebookEl.dataset.current = String(p.id);
+        notebookEl.classList.add('view-single');
+        notebookEl.classList.remove('view-spread');
+        notebookEl.dataset.view = 'single';
+      }
+      renderDecorations();
+      if (window.MemoriumTheme) {
+        const curTheme = normalizeTheme(p.theme || 'classic-leather');
+        document.querySelectorAll('.theme-dot').forEach(d => {
+          d.classList.toggle('active', d.dataset.theme === curTheme);
+        });
+      }
+      return;
+    } else {
+      if (notebookEl) {
+        notebookEl.classList.remove('view-single');
+        notebookEl.classList.add('view-spread');
+        notebookEl.dataset.view = 'spread';
+      }
+    }
+
     // Open-book spread for N pages: show two facing pages per spread
     // For N>2 we reuse the two DOM slots and swap content (no new DOM)
     const spreadStart = Math.floor(state.currentPageIndex / 2) * 2;
@@ -388,6 +496,10 @@
           <input type="date" class="meta-input meta-date-input" aria-label="Date">
           <span class="meta-date-display" aria-hidden="true"></span>
         </label>
+        <label class="meta-field meta-field--time" title="Time">
+          <span class="meta-icon" aria-hidden="true">🕒</span>
+          <input type="time" class="meta-input meta-time-input" aria-label="Time">
+        </label>
         <span class="meta-divider" aria-hidden="true">·</span>
         <span class="meta-field meta-field--mood" role="group" aria-label="Mood">
           <span class="meta-icon" aria-hidden="true">😊</span>
@@ -444,11 +556,40 @@
         btn.addEventListener('click', () => handleMetadataChange(page, 'weather', w.id));
         weatherContainer.appendChild(btn);
       });
-      // Date input
+      // Date + Time inputs — combine to single ISO
       const dateInput = bar.querySelector('.meta-date-input');
-      dateInput.addEventListener('change', e => {
-        const val = e.target.value ? new Date(e.target.value).toISOString() : null;
-        handleMetadataChange(page, 'date', val);
+      const timeInput = bar.querySelector('.meta-time-input');
+      const getCombinedDateTime = () => {
+        const dateVal = dateInput.value;
+        const timeVal = timeInput.value;
+        if (!dateVal && !timeVal) return null;
+        if (!dateVal && timeVal) {
+          // No date but time set: use today as date
+          const today = new Date().toISOString().slice(0, 10);
+          const t = timeVal || '00:00';
+          const iso = new Date(`${today}T${t}:00`).toISOString();
+          return isNaN(new Date(iso).getTime()) ? null : iso;
+        }
+        if (dateVal && !timeVal) {
+          const iso = new Date(`${dateVal}T00:00:00`).toISOString();
+          return isNaN(new Date(iso).getTime()) ? null : iso;
+        }
+        const iso = new Date(`${dateVal}T${timeVal}:00`).toISOString();
+        return isNaN(new Date(iso).getTime()) ? null : iso;
+      };
+      dateInput.addEventListener('change', () => {
+        const iso = getCombinedDateTime();
+        handleMetadataChange(page, 'date', iso);
+      });
+      timeInput.addEventListener('change', () => {
+        const iso = getCombinedDateTime();
+        handleMetadataChange(page, 'date', iso);
+      });
+      // Also handle time input via input event for quicker feedback
+      timeInput.addEventListener('input', () => {
+        // Debounced? immediate for preview
+        const iso = getCombinedDateTime();
+        if (iso) handleMetadataChange(page, 'date', iso);
       });
       // Location input — debounced
       const locInput = bar.querySelector('.meta-location-input');
@@ -475,16 +616,53 @@
 
   function updateMetadataBar(bar, page) {
     if (!bar || !page) return;
-    // Date
+    // Date + Time — combine to single ISO, display date + time
     const dateInput = bar.querySelector('.meta-date-input');
+    const timeInput = bar.querySelector('.meta-time-input');
     const dateDisplay = bar.querySelector('.meta-date-display');
     const iso = page.date ? normalizeDate(page.date) : null;
     const display = iso ? formatDateForDisplay(iso) : '';
     const inputVal = iso ? formatDateForInput(iso) : '';
+    const timeVal = iso ? new Date(iso).toISOString().slice(11, 16) : '';
+    // Only show time if not midnight or if user explicitly set time (we show time if date exists)
+    const showTime = iso ? timeVal : '';
     if (dateInput && dateInput.value !== inputVal) dateInput.value = inputVal;
+    if (timeInput) {
+      // Avoid overwriting when user is typing
+      if (document.activeElement !== timeInput) {
+        if (timeInput.value !== showTime) timeInput.value = showTime;
+      }
+      // Disable time if no date and no time set? Keep enabled for today fallback
+      // Toggle has-value for time
+      const hasTime = !!showTime && showTime !== '00:00';
+      // Still show has-value if date exists
+      bar.querySelector('.meta-field--time')?.classList.toggle('has-value', !!iso);
+      // If iso is midnight, we still show 00:00 as placeholder but not has-value
+      if (timeInput.value === '00:00' && !hasTime) {
+        // Keep as 00:00 but not highlight
+      }
+    }
     if (dateDisplay) {
-      dateDisplay.textContent = display || '—';
-      dateDisplay.title = display ? 'Date: ' + display + ' (click to edit)' : 'Add date';
+      // Combine date display with time if not midnight
+      let displayWithTime = display || '—';
+      if (iso && timeVal && timeVal !== '00:00') {
+        // Format time as e.g., 2:30 PM
+        try {
+          const d = new Date(iso);
+          const t = d.toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+          displayWithTime = `${display} · ${t}`;
+        } catch (_) {
+          displayWithTime = `${display} ${timeVal}`;
+        }
+      }
+      dateDisplay.textContent = displayWithTime;
+      dateDisplay.title = display
+        ? `Date: ${display}${timeVal && timeVal !== '00:00' ? ' ' + timeVal : ''} (click to edit)`
+        : 'Add date';
       bar.querySelector('.meta-field--date').classList.toggle('has-value', !!iso);
     }
     // Mood
@@ -2394,6 +2572,27 @@
     renderNavigationHints();
     setupEventListeners();
     setupPhysicalInteraction();
+    // View toggle (single/spread) beside searchbar
+    (function setupViewToggle() {
+      const singleBtn = document.querySelector('.view-btn[data-view="single"]');
+      const spreadBtn = document.querySelector('.view-btn[data-view="spread"]');
+      if (!singleBtn || !spreadBtn) return;
+      function bind(btn) {
+        btn.addEventListener('click', () => {
+          setViewMode(btn.dataset.view);
+        });
+      }
+      bind(singleBtn);
+      bind(spreadBtn);
+      // Initialize UI and notebook view class
+      if (notebookEl) {
+        notebookEl.classList.toggle('view-single', isSingleView());
+        notebookEl.classList.toggle('view-spread', !isSingleView());
+        notebookEl.dataset.view = viewMode;
+      }
+      updateViewToggleUI();
+      // Also apply on view change from other tabs? no
+    })();
     // update indicator text
     const upd = () => {
       const ind = document.getElementById('page-indicator');
@@ -2429,6 +2628,9 @@
     getState: () => state,
     applyThemeToCurrent,
     applyPaperToCurrent,
+    getViewMode,
+    setViewMode,
+    isSingleView,
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

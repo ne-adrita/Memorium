@@ -307,6 +307,58 @@ body.memorium-drawer-ready .writing-tools-bar {
   /* After collection, any that remain outside drawer should be hidden — we handle via JS moving, but CSS fallback */
 }
 
+.memorium-drawer-footer {
+  margin-top: auto;
+  padding: 0.9rem 1rem 1rem;
+  border-top: 1px solid rgba(107,79,59,0.08);
+  background: rgba(248,241,231,0.55);
+  text-align: center;
+  flex-shrink: 0;
+}
+.memorium-drawer-footer p {
+  font-family: var(--heading-font, 'Cormorant Garamond', serif);
+  font-size: 0.72rem;
+  color: var(--text-muted, #6E6259);
+  margin: 0.15rem 0;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+.memorium-drawer-footer .drawer-footer-quote {
+  font-family: var(--body-font, 'Lora', serif);
+  font-style: italic;
+  color: #8B7355;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  margin-top: 0.25rem;
+}
+
+/* Desktop: footer at end of page, hide drawer footer to avoid duplication */
+@media (min-width: 769px) {
+  .memorium-drawer-footer { display: none !important; }
+}
+@media (max-width: 768px) {
+  /* On mobile, keep drawer footer; main footer also visible but compact */
+  .memorium-drawer-footer { display: block; }
+}
+
+/* Main footer at end of page — vintage */
+.footer {
+  background: #2B211B;
+  color: rgba(248,241,231,0.72);
+  text-align: center;
+  padding: 1.6rem 1rem 1.8rem;
+  border-top: 1px solid rgba(201,162,39,0.14);
+}
+.footer-content p { margin: 0.2rem 0; font-family: var(--heading-font, 'Cormorant Garamond', serif); font-size: 0.82rem; letter-spacing: 0.03em; }
+.footer-content .footer-quote {
+  font-family: var(--body-font, 'Lora', serif);
+  font-style: italic;
+  color: rgba(248,241,231,0.92);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  margin-top: 0.35rem;
+}
+
 /* Mobile: drawer becomes bottom sheet */
 @media (max-width: 768px) {
   .memorium-tools-trigger {
